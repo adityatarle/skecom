@@ -16,6 +16,7 @@ use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\RazorpayController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\CustomerController;
 
 // Public Routes
 Route::get('/', [MainpageController::class, 'index'])->name('main.page');
@@ -143,6 +144,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::delete('/orders/{id}', [OrdersController::class, 'destroy'])->name('admin.orders.destroy');
     Route::post('/orders/{id}/status', [OrdersController::class, 'updateStatus'])->name('admin.orders.updateStatus');
     Route::get('/orders/export', [OrdersController::class, 'export'])->name('admin.orders.export');
+
+    // Customer Management
+    Route::prefix('customers')->name('admin.customers.')->group(function () {
+        Route::get('/', [CustomerController::class, 'index'])->name('index');
+        Route::get('/groups', [CustomerController::class, 'groups'])->name('groups');
+        Route::get('/export', [CustomerController::class, 'export'])->name('export');
+        Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
+    });
 });
 
 // Admin subcategories helper route

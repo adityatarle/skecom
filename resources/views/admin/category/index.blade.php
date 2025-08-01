@@ -1,5 +1,59 @@
 @include('dashboard.layout.header')
 
+<style>
+    /* Fix dark mode table issues */
+    .table {
+        margin-bottom: 0;
+    }
+    
+    .table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    /* Ensure proper spacing in dark mode */
+    .card-footer {
+        background: transparent !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    /* Fix table row spacing */
+    .table tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    /* Ensure proper card spacing */
+    .card {
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Fix pagination styling in dark mode */
+    .pagination {
+        margin-bottom: 0;
+    }
+    
+    .page-link {
+        background-color: transparent;
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #a1a5b7;
+    }
+    
+    .page-link:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+    }
+    
+    .page-item.active .page-link {
+        background-color: #667eea;
+        border-color: #667eea;
+        color: #ffffff;
+    }
+</style>
+
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
@@ -236,14 +290,8 @@
                     </div>
 
                     @if($categories instanceof \Illuminate\Pagination\LengthAwarePaginator && $categories->hasPages())
-                        <div class="card-footer bg-white border-top-0">
+                        <div class="card-footer bg-transparent border-top-0">
                             {{ $categories->appends(request()->query())->links() }}
-                        </div>
-                    @elseif($categories instanceof \Illuminate\Support\Collection && $categories->count() > 0)
-                        <div class="card-footer bg-white border-top-0">
-                            <div class="text-center text-muted">
-                                <small>Showing {{ $categories->count() }} categories (pagination disabled)</small>
-                            </div>
                         </div>
                     @endif
                 </div>

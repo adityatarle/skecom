@@ -57,11 +57,10 @@ class Order extends Model
     }
 
     /**
-     * Get the items associated with the order (if using a separate OrderItem model).
-     * Example relationship - uncomment and adjust if you have an OrderItem model.
+     * Get the items associated with the order.
      */
-    // public function items()
-    // {
-    //     return $this->hasMany(OrderItem::class); // Assumes OrderItem model exists and has 'order_id'
-    // }
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 }

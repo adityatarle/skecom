@@ -6,9 +6,10 @@
                     <div class="widgets_container contact_us">
                         <h3>About SK</h3>
                         <div class="footer_contact">
-                            <p>Address: Your address goes here.</p>
-                            <p>Phone: <a href="tel:0123456789">0123456789</a></p>
-                            <p>Email: demo@example.com</p>
+                            <p><i class="fa-solid fa-location-dot me-2"></i><a href="https://maps.app.goo.gl/1yAUhdB3UTGKTHsq7" target="_blank"> 201, Bansari Bhuvan, Shop No.11, Tamil Sangam Marg, Opp. Union Bank, Sion (E), Mumbai - 400 022. India</a></p>
+                            <p><i class="fa-solid fa-phone me-2"></i> <a href="tel:8450999000" target="_blank">8450999000</a> | <a href="tel:8450999088" target="_blank">8450999088</a></p>
+                            <p><i class="fa-solid fa-tty me-2"></i><a href="tel:022 - 2403 3043" target="_blank">+91 022 - 2403 3043/44/45</a></p>
+                            <p><i class="fa-solid fa-envelope me-2"></i><a href="mailto:customer.service@skornaments.com" target="_blank">customer.service@skornaments.com</a></p>
                             <ul>
                                 <li><a href="#"><i class="fa-brands fa-facebook"></i></a></li>
                                 <li><a href="#"><i class="fa-brands fa-twitter"></i></a></li>
@@ -110,7 +111,7 @@
             <div class="row">
                 <div class="col-12">
                     <div class="copyright_area">
-                        <p>© Copyright <a href="#" class="text-uppercase">Heuristic Technopark</a>. All Rights Reserved</p>
+                        <p>© Copyright <a href="#" class="text-uppercase">Heuristic Technopark Pvt Ltd</a>. All Rights Reserved</p>
                         <img src="{{ asset('assets/img/icon/papyel2.png') }}" alt="">
                     </div>
                 </div>

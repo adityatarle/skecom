@@ -259,7 +259,6 @@
     display: block;
 }
 .jewel-empty-text {
-    font-size: 1.5rem;
     color: #666;
     margin-bottom: 20px;
 }
@@ -277,7 +276,7 @@
         <div class="row">
             <div class="col-12">
                 <div class="breadcrumb_content">
-                    <h3 class="jewel-title">Your Jewelry Cart</h3>
+                    <h3 class="jewel-title">Your Jewellery Cart</h3>
                     <ul>
                         <li><a href="/">Home</a></li>
                         <li>></li>
@@ -320,7 +319,7 @@
                                     <tr>
                                         <th class="product_remove">Remove</th>
                                         <th class="product_thumb1">Preview</th>
-                                        <th class="product_name">Jewelry</th>
+                                        <th class="product_name">Jewellery</th>
                                         <th class="product-price">Price</th>
                                         <th class="product_quantity">Qty</th>
                                         <th class="product_total">Total</th>
@@ -412,7 +411,7 @@
                 <!-- Empty Cart Message -->
                 <div id="empty-cart-message" class="jewel-empty-cart">
                     <p class="jewel-empty-text">Your cart is awaiting its treasures.</p>
-                    <a href="{{ route('products') }}" class="btn subtle-btn jewel-btn">Explore Jewelry</a>
+                    <a href="{{ route('products') }}" class="btn subtle-btn jewel-btn">Explore Jewellery</a>
                 </div>
             </div>
         </div>

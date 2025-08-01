@@ -502,7 +502,7 @@ textarea:-ms-input-placeholder {
 }
 
 body {
-  font-family: 'Arial', sans-serif;
+  font-family: "Open Sans", sans-serif;
   margin: 0;
   padding: 0;
   background-color: var(--light-background);

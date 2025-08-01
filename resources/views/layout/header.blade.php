@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>Sk Ornaments - Fashion Jewelry</title>
+    <title>Sk Ornaments - Fashion Jewellery</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -109,7 +109,7 @@
                         </a>
                         <a href="{{ route('wishlist.index') }}">
                             <i class="fa-regular fa-heart">
-                                <span class="badge" id="wishlist_count">
+                                <span class="badge fs-6" id="wishlist_count">
                                     @auth
                                     {{ \App\Models\Wishlist::where('user_id', Auth::id())->count() }}
                                     @else
@@ -120,7 +120,7 @@
                         </a>
                         <a href="{{ route('cart.index') }}">
                             <i class="fa-solid fa-cart-shopping">
-                                <span class="badge" id="cart_count">{{ count(session('cart', [])) }}</span>
+                                <span class="badge fs-6" id="cart_count">{{ count(session('cart', [])) }}</span>
                             </i>
                         </a>
                         <a href="{{ route('profile.show') }}">

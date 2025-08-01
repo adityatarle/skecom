@@ -430,11 +430,12 @@
                                     </div>
 
                                     <div class="px-5 menu-item">
-                                        <a href="#" class="px-5 menu-link">
-                                            <form method="POST" action="">
-                                                @csrf
-                                            </form>
+                                        <a href="#" class="px-5 menu-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Logout
                                         </a>
+                                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                            @csrf
+                                        </form>
                                     </div>
                                     <!--end::Menu item-->
                                 </div>
@@ -681,7 +682,7 @@
                                     <!-- Customer Management Section -->
                                     <div class="menu-category">Customer Management</div>
 
-                                    <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+                                    <div data-kt-menu-trigger="click" class="menu-item menu-accordion {{ request()->routeIs('admin.customers.*') ? 'show' : '' }}">
                                         <span class="menu-link">
                                             <span class="menu-icon">
                                                 <i class="ki-duotone ki-user fs-2">
@@ -694,7 +695,7 @@
                                         </span>
                                         <div class="menu-sub menu-sub-accordion menu-active-bg">
                                             <div class="menu-item">
-                                                <a class="menu-link" href="#">
+                                                <a class="menu-link {{ request()->routeIs('admin.customers.index') ? 'active' : '' }}" href="{{ route('admin.customers.index') }}">
                                                     <span class="menu-bullet">
                                                         <span class="bullet bullet-dot"></span>
                                                     </span>
@@ -702,7 +703,7 @@
                                                 </a>
                                             </div>
                                             <div class="menu-item">
-                                                <a class="menu-link" href="#">
+                                                <a class="menu-link {{ request()->routeIs('admin.customers.groups') ? 'active' : '' }}" href="{{ route('admin.customers.groups') }}">
                                                     <span class="menu-bullet">
                                                         <span class="bullet bullet-dot"></span>
                                                     </span>

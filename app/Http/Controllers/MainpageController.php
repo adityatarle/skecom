@@ -163,5 +163,41 @@ class MainpageController extends Controller
         return view('contact');
     }
 
+    public function about() {
+        return view('about');
+    }
+
+    public function privacyPolicy() {
+        return view('privacy-policy');
+    }
+
+    public function termsConditions() {
+        return view('terms-conditions');
+    }
+
+    public function shippingPolicy() {
+        return view('shipping-policy');
+    }
+
+    public function returnPolicy() {
+        return view('return-policy');
+    }
+
+    public function sizeGuide() {
+        return view('size-guide');
+    }
+
+    public function jewelryCare() {
+        return view('jewelry-care');
+    }
+
+    public function blog() {
+        return view('blog.index');
+    }
+
+    public function blogPost($slug) {
+        return view('blog.post', ['slug' => $slug]);
+    }
+
     }
 

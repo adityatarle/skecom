@@ -25,10 +25,12 @@
                         <h3>Information</h3>
                         <div class="footer_menu">
                             <ul>
-                                <li><a href="#">About Us</a></li>
-                                <li><a href="#sk-blog">Blog</a></li>
-                                <li><a href="{{route('products')}}">Products</a></li>
-                                <li><a href="#">Contact</a></li>
+                                <li><a href="{{ route('about') }}">About Us</a></li>
+                                <li><a href="{{ route('blog') }}">Blog</a></li>
+                                <li><a href="{{ route('products') }}">Products</a></li>
+                                <li><a href="{{ route('contact') }}">Contact</a></li>
+                                <li><a href="{{ route('size.guide') }}">Size Guide</a></li>
+                                <li><a href="{{ route('jewelry.care') }}">Jewelry Care</a></li>
                             </ul>
                         </div>
                     </div>
@@ -38,9 +40,10 @@
                         <h3>My Account</h3>
                         <div class="footer_menu">
                             <ul>
-                                <li><a href="{{route('profile.show')}}">My Account</a></li>
-                                <li><a href="{{route('wishlist.index')}}">Wishlist</a></li>
-                                <li><a href="{{route('checkout')}}">Checkout</a></li>
+                                <li><a href="{{ route('profile.show') }}">My Account</a></li>
+                                <li><a href="{{ route('wishlist.index') }}">Wishlist</a></li>
+                                <li><a href="{{ route('checkout') }}">Checkout</a></li>
+                                <li><a href="{{ route('orders.index') }}">My Orders</a></li>
                             </ul>
                         </div>
                     </div>
@@ -94,10 +97,13 @@
                 <div class="col-12">
                     <div class="footer_middel_menu">
                         <ul>
-                            <li><a href="#">Home</a></li>
-                            <li><a href="#">Online Store</a></li>
-                            <li><a href="#">Promotion</a></li>
-                            <li><a href="#">Privacy Policy</a></li>
+                            <li><a href="{{ route('home') }}">Home</a></li>
+                            <li><a href="{{ route('products') }}">Online Store</a></li>
+                            <li><a href="{{ route('blog') }}">Blog</a></li>
+                            <li><a href="{{ route('privacy.policy') }}">Privacy Policy</a></li>
+                            <li><a href="{{ route('terms.conditions') }}">Terms & Conditions</a></li>
+                            <li><a href="{{ route('shipping.policy') }}">Shipping Policy</a></li>
+                            <li><a href="{{ route('return.policy') }}">Return Policy</a></li>
                             <li><a href="#">Terms Of Use</a></li>
                             <li><a href="#">Sitemap</a></li>
                             <li><a href="#">Support</a></li>

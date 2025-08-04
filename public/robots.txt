@@ -1,2 +1,30 @@
 User-agent: *
-Disallow:
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /login
+Disallow: /register
+Disallow: /password/
+Disallow: /api/
+Disallow: /debug/
+
+# Allow important pages
+Allow: /products
+Allow: /product/
+Allow: /about
+Allow: /contact
+Allow: /blog
+Allow: /privacy-policy
+Allow: /terms-conditions
+Allow: /shipping-policy
+Allow: /return-policy
+Allow: /size-guide
+Allow: /jewelry-care
+
+# Sitemap
+Sitemap: https://skornaments.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1

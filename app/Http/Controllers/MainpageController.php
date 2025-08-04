@@ -119,102 +119,37 @@ class MainpageController extends Controller
 
     public function products(Request $request)
     {
-        // Get filter parameters
         $category = $request->input('category');
         $subcategory = $request->input('subcategory');
         $min_price = $request->input('min_price');
         $max_price = $request->input('max_price');
-        $search = $request->input('search');
-        $sort = $request->input('sort', 'latest'); // default sort
 
-        // Start building the query
-        $query = Product::with(['category', 'subcategory', 'images']);
-
-        // Apply category filter
-        if ($category && $category !== 'all') {
+        $products = Product::when($category && $category != 'all', function ($query) use ($category) {
             $query->whereHas('category', function ($q) use ($category) {
                 $q->where('name', $category);
             });
-        }
+        })
+            ->when($subcategory, function ($query) use ($subcategory) {
+                $query->whereHas('subcategory', function ($q) use ($subcategory) {
+                    $q->where('name', $subcategory);
+                });
+            })
+            ->when($min_price !== null && $max_price !== null, function ($query) use ($min_price, $max_price) {
+                $query->where('price', '>=', $min_price)
+                    ->where('price', '<=', $max_price);
+            })
+            ->get();
 
-        // Apply subcategory filter
-        if ($subcategory && $subcategory !== 'all') {
-            $query->whereHas('subcategory', function ($q) use ($subcategory) {
-                $q->where('name', $subcategory);
-            });
-        }
+        $categories = ProductCategory::all();
 
-        // Apply price range filter
-        if ($min_price !== null && $min_price !== '') {
-            $query->where('price', '>=', (float) $min_price);
-        }
-        if ($max_price !== null && $max_price !== '') {
-            $query->where('price', '<=', (float) $max_price);
-        }
-
-        // Apply search filter
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('description', 'LIKE', "%{$search}%")
-                  ->orWhereHas('category', function ($catQuery) use ($search) {
-                      $catQuery->where('name', 'LIKE', "%{$search}%");
-                  })
-                  ->orWhereHas('subcategory', function ($subQuery) use ($search) {
-                      $subQuery->where('name', 'LIKE', "%{$search}%");
-                  });
-            });
-        }
-
-        // Apply sorting
-        switch ($sort) {
-            case 'price_low':
-                $query->orderBy('price', 'asc');
-                break;
-            case 'price_high':
-                $query->orderBy('price', 'desc');
-                break;
-            case 'name_asc':
-                $query->orderBy('name', 'asc');
-                break;
-            case 'name_desc':
-                $query->orderBy('name', 'desc');
-                break;
-            case 'latest':
-            default:
-                $query->latest();
-                break;
-        }
-
-        // Get products with pagination
-        $products = $query->paginate(12);
-
-        // Get categories with subcategories for the sidebar
-        $categories = ProductCategory::with('subcategories')->get();
-
-        // Get price range for slider
-        $priceRange = Product::selectRaw('MIN(price) as min_price, MAX(price) as max_price')->first();
-        $minPrice = $priceRange->min_price ?? 0;
-        $maxPrice = $priceRange->max_price ?? 10000;
-
-        // If AJAX request, return only the product grid
         if ($request->ajax()) {
-            return view('partials.product_grid', compact('products'))->render();
+            return view('partials.product_grid', ['products' => $products])->render();
         }
 
-        // Return full view with all data
-        return view('products', compact(
-            'products',
-            'categories',
-            'minPrice',
-            'maxPrice',
-            'category',
-            'subcategory',
-            'min_price',
-            'max_price',
-            'search',
-            'sort'
-        ));
+        return view('products', [
+            'products' => $products,
+            'categories' => $categories,
+        ]);
     }
 
 
@@ -262,19 +197,6 @@ class MainpageController extends Controller
 
     public function blogPost($slug) {
         return view('blog.post', ['slug' => $slug]);
-    }
-
-    public function getSubcategories(Request $request)
-    {
-        $categoryId = $request->input('category_id');
-        
-        if (!$categoryId) {
-            return response()->json([]);
-        }
-
-        $subcategories = Subcategory::where('category_id', $categoryId)->get(['id', 'name']);
-        
-        return response()->json($subcategories);
     }
 
     }

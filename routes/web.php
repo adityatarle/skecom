@@ -38,7 +38,6 @@ Route::post('/product/inquiry', [ProductController::class, 'storeInquiry'])->nam
 Route::get('/product/{product}/review/create', [MainpageController::class, 'createReviewForm'])->name('product.review.create');
 Route::post('/product/review', [MainpageController::class, 'submitReview'])->name('product.review');
 Route::get('/filter-products', [MainpageController::class, 'filterProducts'])->name('filter.products');
-Route::get('/get-subcategories', [MainpageController::class, 'getSubcategories'])->name('get.subcategories');
 
 // Cart Routes (Work for both guest and authenticated users)
 Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');

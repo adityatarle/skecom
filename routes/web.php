@@ -158,6 +158,26 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 Route::get('/admin/subcategories/get-by-category', [SubcategoryController::class, 'getByCategory'])->name('admin.subcategory.getByCategory');
 Route::get('/admin/subcategories/get-by-parent', [SubcategoryController::class, 'getSubcategoriesByParent'])->name('admin.subcategory.getByParent');
 
+// API Routes for real-time order status updates
+Route::get('/api/orders/{order}/status', function($orderId) {
+    try {
+        $order = \App\Models\Order::findOrFail($orderId);
+        
+        // Check if user is authorized to view this order
+        if (auth()->check() && $order->user_id === auth()->id()) {
+            return response()->json([
+                'success' => true,
+                'status' => $order->status,
+                'updated_at' => $order->updated_at->format('Y-m-d H:i:s')
+            ]);
+        }
+        
+        return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => 'Order not found'], 404);
+    }
+})->name('api.orders.status');
+
 // Debug route for testing database connection
 Route::get('/debug/categories', function() {
     try {

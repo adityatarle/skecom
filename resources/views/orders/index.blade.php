@@ -89,9 +89,14 @@
         color: #383d41;
     }
     
-    .status-completed {
+    .status-delivered {
         background: #d1ecf1;
         color: #0c5460;
+    }
+    
+    .status-completed {
+        background: #d4edda;
+        color: #155724;
     }
     
     .order-items {
@@ -309,7 +314,7 @@
                             <a href="{{ route('orders.show', $order->id) }}" class="btn-view">
                                 <i class="fa fa-eye"></i> View Details
                             </a>
-                            @if($order->status === 'completed')
+                            @if(in_array($order->status, ['completed', 'delivered']))
                                 <a href="#" class="btn-reorder" onclick="reorderItems({{ $order->id }})">
                                     <i class="fa fa-refresh"></i> Reorder
                                 </a>

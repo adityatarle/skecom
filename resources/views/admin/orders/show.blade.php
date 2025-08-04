@@ -70,6 +70,11 @@
                                                                 <i class="fas fa-shipping-fast me-1"></i>Shipped
                                                             </span>
                                                             @break
+                                                        @case('delivered')
+                                                            <span class="badge bg-info fs-6">
+                                                                <i class="fas fa-truck me-1"></i>Delivered
+                                                            </span>
+                                                            @break
                                                         @case('completed')
                                                             <span class="badge bg-success fs-6">
                                                                 <i class="fas fa-check me-1"></i>Completed
@@ -205,6 +210,9 @@
                                                 </option>
                                                 <option value="shipped" {{ $order->status == 'shipped' ? 'selected' : '' }}>
                                                     <i class="fas fa-shipping-fast"></i> Shipped
+                                                </option>
+                                                <option value="delivered" {{ $order->status == 'delivered' ? 'selected' : '' }}>
+                                                    <i class="fas fa-truck"></i> Delivered
                                                 </option>
                                                 <option value="completed" {{ $order->status == 'completed' ? 'selected' : '' }}>
                                                     <i class="fas fa-check"></i> Completed

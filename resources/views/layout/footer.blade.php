@@ -104,10 +104,10 @@
                             <li><a href="{{ route('terms.conditions') }}">Terms & Conditions</a></li>
                             <li><a href="{{ route('shipping.policy') }}">Shipping Policy</a></li>
                             <li><a href="{{ route('return.policy') }}">Return Policy</a></li>
-                            <li><a href="#">Terms Of Use</a></li>
-                            <li><a href="#">Sitemap</a></li>
-                            <li><a href="#">Support</a></li>
-                            <li><a href="#">Contacts</a></li>
+                            <li><a href="{{ route('terms.conditions') }}">Terms Of Use</a></li>
+                            <li><a href="{{ url('/sitemap.xml') }}">Sitemap</a></li>
+                            <li><a href="{{ route('contact') }}">Support</a></li>
+                            <li><a href="{{ route('contact') }}">Contacts</a></li>
                         </ul>
                     </div>
                 </div>

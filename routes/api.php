@@ -24,6 +24,25 @@ use App\Http\Controllers\Api\MainController;
 |
 */
 
+// Test Route to verify API is working
+Route::get('/test', function () {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'API is working!',
+        'timestamp' => now()->toISOString(),
+        'version' => '1.0.0'
+    ]);
+});
+
+// Health Check Route
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'API is running',
+        'timestamp' => now()->toISOString()
+    ]);
+});
+
 // Public Routes
 Route::prefix('v1')->group(function () {
     
@@ -134,13 +153,4 @@ Route::prefix('v1')->group(function () {
         
     });
     
-});
-
-// Health Check Route
-Route::get('/health', function () {
-    return response()->json([
-        'status' => 'success',
-        'message' => 'API is running',
-        'timestamp' => now()->toISOString()
-    ]);
 });

@@ -20,15 +20,21 @@
      /**
       * Bootstrap any application services.
       */
-     public function boot(): void
-     {
-         View::composer('*', function ($view) {
-             $categories = ProductCategory::all();
-             $view->with('categories', $categories);
-         });
+         public function boot(): void
+    {
+        // Only load categories for web views, not API requests
+        if (!request()->is('api/*')) {
+            View::composer('*', function ($view) {
+                try {
+                    $categories = ProductCategory::all();
+                    $view->with('categories', $categories);
+                } catch (\Exception $e) {
+                    $view->with('categories', collect());
+                }
+            });
+        }
 
-
-         // Add this line to tell Laravel to use Bootstrap 5 for pagination links
-        Paginator::useBootstrapFive();
-     }
+        // Add this line to tell Laravel to use Bootstrap 5 for pagination links
+       Paginator::useBootstrapFive();
+    }
  }

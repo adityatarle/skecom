@@ -1,44 +1,40 @@
-# Hostinger Deployment Guide
+# Hostinger Deployment Guide for Laravel Jewelry Shop
 
-## 🚀 Deploy Your Ecommerce API to Hostinger
+## Overview
 
-This guide will help you deploy your Laravel ecommerce API to Hostinger hosting platform.
+This guide provides step-by-step instructions for deploying your Laravel jewelry shop project to Hostinger hosting. Your APIs have been tested and are ready for production deployment.
 
----
+## Prerequisites
 
-## 📋 Prerequisites
+- ✅ Hostinger hosting account with PHP support
+- ✅ Domain name configured
+- ✅ Laravel project tested locally
+- ✅ Database requirements understood
+- ✅ SSL certificate (recommended)
 
-- Hostinger hosting account with PHP 8.1+ support
-- Domain name (or subdomain)
-- Access to Hostinger control panel
-- Database (MySQL) access
+## 1. Pre-Deployment Preparation
 
----
+### Update Environment Configuration
 
-## 🔧 Step-by-Step Deployment
-
-### 1. Prepare Your Laravel Project
-
-#### A. Update Environment Configuration
-
-Create/update your `.env` file for production:
+Before deployment, update your `.env` file for production:
 
 ```env
-APP_NAME="Your Ecommerce Store"
+APP_NAME="Jewelry Shop"
 APP_ENV=production
-APP_KEY=base64:your_generated_key_here
+APP_KEY=base64:YOUR_GENERATED_KEY_HERE
 APP_DEBUG=false
-APP_URL=https://yourdomain.com
+APP_URL=https://your-domain.com
 
 LOG_CHANNEL=stack
 LOG_DEPRECATIONS_CHANNEL=null
-LOG_LEVEL=debug
+LOG_LEVEL=error
 
+# Database Configuration
 DB_CONNECTION=mysql
 DB_HOST=localhost
 DB_PORT=3306
 DB_DATABASE=your_database_name
-DB_USERNAME=your_database_username
+DB_USERNAME=your_database_user
 DB_PASSWORD=your_database_password
 
 BROADCAST_DRIVER=log
@@ -48,32 +44,23 @@ QUEUE_CONNECTION=sync
 SESSION_DRIVER=file
 SESSION_LIFETIME=120
 
-# Razorpay Configuration
-RAZORPAY_KEY=rzp_test_your_key_here
-RAZORPAY_SECRET=your_secret_here
-RAZORPAY_TEST_MODE=true
-
-# Mail Configuration
+# Mail Configuration (Optional)
 MAIL_MAILER=smtp
-MAIL_HOST=your_smtp_host
+MAIL_HOST=smtp.hostinger.com
 MAIL_PORT=587
-MAIL_USERNAME=your_email
-MAIL_PASSWORD=your_password
+MAIL_USERNAME=your-email@your-domain.com
+MAIL_PASSWORD=your-email-password
 MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS="noreply@yourdomain.com"
+MAIL_FROM_ADDRESS=your-email@your-domain.com
 MAIL_FROM_NAME="${APP_NAME}"
 
-# API Configuration
-API_BASE_URL=https://yourdomain.com/api/v1
+# Sanctum Configuration
+SANCTUM_STATEFUL_DOMAINS=your-domain.com
 ```
 
-#### B. Generate Application Key
+### Optimize for Production
 
-```bash
-php artisan key:generate
-```
-
-#### C. Optimize for Production
+Run these commands locally before deployment:
 
 ```bash
 # Clear all caches
@@ -86,36 +73,106 @@ php artisan view:clear
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+
+# Install production dependencies
+composer install --optimize-autoloader --no-dev
 ```
 
-### 2. Upload to Hostinger
+## 2. Hostinger Setup
 
-#### A. Using File Manager
+### Access Your Hosting Panel
 
-1. **Login to Hostinger Control Panel**
-2. **Go to File Manager**
-3. **Navigate to `public_html` folder**
-4. **Upload your Laravel project files**
+1. Log in to your Hostinger account
+2. Go to "Hosting" in the main menu
+3. Click "Manage" next to your hosting plan
+4. Access the File Manager or use FTP
 
-**Important:** Upload all files EXCEPT the `public` folder contents directly to `public_html`.
+### Database Setup
 
-#### B. Using FTP/SFTP
+1. **Create Database:**
+   - Go to "Databases" → "MySQL Databases"
+   - Create a new database (e.g., `u123456789_jewelry_shop`)
+   - Create a database user with full privileges
+   - Note down the database credentials
 
-1. **Get FTP credentials from Hostinger**
-2. **Connect using FileZilla or similar**
-3. **Upload files to `public_html`**
+2. **Database Connection:**
+   - Host: `localhost`
+   - Port: `3306`
+   - Database name: Your created database
+   - Username: Your database user
+   - Password: Your database password
 
-### 3. Configure Directory Structure
+## 3. File Upload Methods
 
-#### A. Move Public Files
+### Method 1: File Manager (Recommended for Small Projects)
 
-1. **Create a new folder called `laravel` in `public_html`**
-2. **Move all Laravel files to `laravel` folder**
-3. **Move contents of `laravel/public` to `public_html`**
+1. **Access File Manager:**
+   - In Hostinger panel, click "File Manager"
+   - Navigate to `public_html` folder
 
-#### B. Update Index.php
+2. **Upload Project:**
+   - Create a ZIP file of your Laravel project
+   - Upload the ZIP file to `public_html`
+   - Extract the ZIP file
+   - Move all files from the extracted folder to `public_html`
 
-Edit `public_html/index.php`:
+### Method 2: FTP (Recommended for Large Projects)
+
+1. **Get FTP Credentials:**
+   - In Hostinger panel, go to "Files" → "FTP Accounts"
+   - Use the main FTP account or create a new one
+
+2. **Upload via FTP:**
+   - Use an FTP client like FileZilla
+   - Connect using your FTP credentials
+   - Upload all project files to `public_html`
+
+### Method 3: Git (Advanced)
+
+1. **Enable SSH (if available):**
+   - Check if your Hostinger plan supports SSH
+   - Generate SSH keys if needed
+
+2. **Clone Repository:**
+   ```bash
+   cd public_html
+   git clone https://github.com/your-username/jewelry-shop.git .
+   ```
+
+## 4. Post-Upload Configuration
+
+### File Structure
+
+Your `public_html` folder should look like this:
+
+```
+public_html/
+├── app/
+├── bootstrap/
+├── config/
+├── database/
+├── public/
+│   ├── index.php
+│   ├── .htaccess
+│   └── assets/
+├── resources/
+├── routes/
+├── storage/
+├── vendor/
+├── .env
+├── artisan
+├── composer.json
+└── composer.lock
+```
+
+### Important: Document Root Configuration
+
+**Critical Step:** The document root should point to the `public` folder, not the project root.
+
+#### Option 1: Move Public Contents (Recommended)
+
+1. Move all contents from `public/` folder to `public_html/`
+2. Update `index.php` paths:
 
 ```php
 <?php
@@ -125,102 +182,82 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-/*
-|--------------------------------------------------------------------------
-| Check If The Application Is Under Maintenance
-|--------------------------------------------------------------------------
-*/
-
-if (file_exists($maintenance = __DIR__.'/../laravel/storage/framework/maintenance.php')) {
-    require $maintenance;
-}
-
-/*
-|--------------------------------------------------------------------------
-| Register The Auto Loader
-|--------------------------------------------------------------------------
-*/
-
-require __DIR__.'/../laravel/vendor/autoload.php';
-
-/*
-|--------------------------------------------------------------------------
-| Run The Application
-|--------------------------------------------------------------------------
-*/
-
-$app = require_once __DIR__.'/../laravel/bootstrap/app.php';
+// Update these paths
+require __DIR__.'/vendor/autoload.php';
+$app = require_once __DIR__.'/bootstrap/app.php';
 
 $kernel = $app->make(Kernel::class);
-
 $response = $kernel->handle(
     $request = Request::capture()
-)->send();
+);
 
+$response->send();
 $kernel->terminate($request, $response);
 ```
 
-### 4. Database Setup
+#### Option 2: Subdomain/Subdirectory
 
-#### A. Create Database in Hostinger
+If you prefer to keep the structure intact:
+- Upload project to a subdirectory (e.g., `public_html/api/`)
+- Access via `https://your-domain.com/api/`
 
-1. **Go to Hostinger Control Panel**
-2. **Click on "Databases" → "MySQL Databases"**
-3. **Create a new database**
-4. **Create a database user**
-5. **Assign user to database with all privileges**
+### Set File Permissions
 
-#### B. Run Migrations
-
-1. **Access SSH Terminal in Hostinger** (if available)
-2. **Navigate to your Laravel directory**
-3. **Run migrations:**
+Set proper permissions for Laravel:
 
 ```bash
-cd laravel
-php artisan migrate
+# If you have SSH access
+chmod -R 755 storage
+chmod -R 755 bootstrap/cache
+
+# Via File Manager
+# Right-click on folders → Permissions
+# Set storage/ and bootstrap/cache/ to 755
 ```
 
-**Alternative (if SSH not available):**
-- Use phpMyAdmin to import the database structure
-- Or create a temporary migration script
+### Environment Configuration
 
-### 5. Configure Permissions
+1. **Upload .env file:**
+   - Create `.env` file in your project root
+   - Copy your production environment variables
+   - **Never commit .env to version control**
 
-Set proper file permissions:
+2. **Generate Application Key:**
+   ```bash
+   php artisan key:generate
+   ```
+
+## 5. Database Migration
+
+### Run Migrations
+
+1. **Via SSH (if available):**
+   ```bash
+   cd public_html
+   php artisan migrate --force
+   ```
+
+2. **Via Web Interface:**
+   - Create a temporary migration script
+   - Upload and run it via browser
+   - Remove the script after use
+
+3. **Manual Database Import:**
+   - Export your local database
+   - Import via Hostinger's phpMyAdmin
+   - Update any hardcoded URLs or paths
+
+### Seed Database (Optional)
 
 ```bash
-# Storage directory
-chmod -R 755 laravel/storage
-chmod -R 755 laravel/bootstrap/cache
-
-# Make sure these directories are writable
-chmod 755 laravel/storage/logs
-chmod 755 laravel/storage/framework/cache
-chmod 755 laravel/storage/framework/sessions
-chmod 755 laravel/storage/framework/views
+php artisan db:seed --force
 ```
 
-### 6. Install Dependencies
+## 6. Configure Web Server
 
-#### A. Via SSH (Recommended)
+### .htaccess Configuration
 
-```bash
-cd laravel
-composer install --optimize-autoloader --no-dev
-```
-
-#### B. Via File Manager
-
-1. **Upload `composer.json` and `composer.lock`**
-2. **Use Hostinger's Composer tool** (if available)
-3. **Or download vendor folder locally and upload**
-
-### 7. Configure Web Server
-
-#### A. Create .htaccess
-
-Create `.htaccess` in `public_html`:
+Ensure your `.htaccess` file in the document root contains:
 
 ```apache
 <IfModule mod_rewrite.c>
@@ -244,265 +281,244 @@ Create `.htaccess` in `public_html`:
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
-
-# Security Headers
-<IfModule mod_headers.c>
-    Header always set X-Content-Type-Options nosniff
-    Header always set X-Frame-Options DENY
-    Header always set X-XSS-Protection "1; mode=block"
-    Header always set Referrer-Policy "strict-origin-when-cross-origin"
-</IfModule>
-
-# Enable CORS for API
-<IfModule mod_headers.c>
-    Header always set Access-Control-Allow-Origin "*"
-    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, Accept"
-</IfModule>
 ```
 
-### 8. Test Your API
+### PHP Configuration
 
-#### A. Health Check
+Create a `php.ini` file in your document root:
 
-Visit: `https://yourdomain.com/api/health`
-
-Expected response:
-```json
-{
-    "status": "success",
-    "message": "API is running",
-    "timestamp": "2024-01-01T00:00:00.000000Z"
-}
+```ini
+memory_limit = 256M
+max_execution_time = 300
+max_input_vars = 3000
+upload_max_filesize = 64M
+post_max_size = 64M
 ```
 
-#### B. Test Authentication
+## 7. SSL Certificate Setup
+
+### Enable SSL in Hostinger
+
+1. Go to "Security" → "SSL"
+2. Enable "Force HTTPS" 
+3. Wait for SSL certificate activation
+
+### Update Application URLs
+
+Update your `.env` file:
+```env
+APP_URL=https://your-domain.com
+```
+
+## 8. Testing Your Deployment
+
+### Basic Functionality Tests
+
+1. **Website Access:**
+   - Visit `https://your-domain.com`
+   - Check if Laravel welcome page loads
+
+2. **API Endpoints:**
+   ```bash
+   # Test health endpoint
+   curl https://your-domain.com/api/health
+   
+   # Test products endpoint
+   curl https://your-domain.com/api/v1/products
+   
+   # Test categories endpoint
+   curl https://your-domain.com/api/v1/categories
+   ```
+
+3. **Authentication:**
+   ```bash
+   # Test registration
+   curl -X POST https://your-domain.com/api/v1/register \
+        -H "Content-Type: application/json" \
+        -d '{"name":"Test User","email":"test@example.com","password":"password123","password_confirmation":"password123"}'
+   ```
+
+### Performance Testing
+
+1. **Page Load Speed:**
+   - Use tools like GTmetrix or PageSpeed Insights
+   - Optimize images and assets if needed
+
+2. **API Response Time:**
+   - Test API endpoints for response time
+   - Monitor database query performance
+
+## 9. Optimization for Production
+
+### Caching
 
 ```bash
-curl -X POST https://yourdomain.com/api/v1/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test User",
-    "email": "test@example.com",
-    "password": "password123",
-    "password_confirmation": "password123"
-  }'
-```
-
-### 9. SSL Configuration
-
-#### A. Enable SSL in Hostinger
-
-1. **Go to Hostinger Control Panel**
-2. **Click on "SSL"**
-3. **Enable SSL for your domain**
-4. **Wait for SSL to activate (usually 5-10 minutes)**
-
-#### B. Force HTTPS
-
-Add to your `.htaccess`:
-
-```apache
-# Force HTTPS
-RewriteEngine On
-RewriteCond %{HTTPS} off
-RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-```
-
-### 10. Performance Optimization
-
-#### A. Enable Caching
-
-```bash
-# Cache configuration
+# Enable all caches
 php artisan config:cache
-
-# Cache routes
 php artisan route:cache
-
-# Cache views
 php artisan view:cache
 ```
 
-#### B. Optimize Composer
+### Composer Optimization
 
 ```bash
 composer install --optimize-autoloader --no-dev
+composer dump-autoload --optimize
 ```
 
-#### C. Set Proper Permissions
+### Asset Optimization
 
-```bash
-# Make storage writable
-chmod -R 755 storage
-chmod -R 755 bootstrap/cache
-```
+1. **Minify CSS/JS:**
+   - Use Laravel Mix for asset compilation
+   - Enable minification in production
 
----
+2. **Image Optimization:**
+   - Compress images before upload
+   - Use WebP format where possible
 
-## 🔍 Troubleshooting
+## 10. Monitoring and Maintenance
 
-### Common Issues
+### Log Monitoring
 
-#### 1. 500 Internal Server Error
+1. **Laravel Logs:**
+   - Monitor `storage/logs/laravel.log`
+   - Set up log rotation
 
-**Check:**
-- File permissions
-- `.env` file exists
-- Database connection
-- PHP version compatibility
+2. **Server Logs:**
+   - Check Hostinger error logs
+   - Monitor resource usage
 
-**Solution:**
-```bash
-# Check error logs
-tail -f storage/logs/laravel.log
+### Backup Strategy
 
-# Set proper permissions
-chmod -R 755 storage
-chmod -R 755 bootstrap/cache
-```
+1. **Database Backups:**
+   - Set up automated database backups
+   - Export database regularly
 
-#### 2. Database Connection Error
+2. **File Backups:**
+   - Backup uploaded files and user data
+   - Keep multiple backup versions
 
-**Check:**
-- Database credentials in `.env`
-- Database exists
-- User has proper permissions
+### Security Measures
 
-**Solution:**
-```bash
-# Test database connection
-php artisan tinker
-DB::connection()->getPdo();
-```
+1. **Regular Updates:**
+   - Keep Laravel and dependencies updated
+   - Monitor security advisories
 
-#### 3. API Endpoints Not Working
+2. **Access Control:**
+   - Use strong passwords
+   - Enable two-factor authentication
+   - Limit FTP/SSH access
 
-**Check:**
-- Routes are cached
-- `.htaccess` is correct
-- CORS configuration
+## 11. Troubleshooting Common Issues
 
-**Solution:**
-```bash
-# Clear route cache
-php artisan route:clear
-php artisan route:cache
-```
+### 500 Internal Server Error
 
-#### 4. File Upload Issues
+1. **Check Error Logs:**
+   - Look at Hostinger error logs
+   - Check `storage/logs/laravel.log`
 
-**Check:**
-- Storage directory permissions
-- File size limits in PHP
-- Upload directory exists
+2. **Common Fixes:**
+   ```bash
+   # Clear all caches
+   php artisan config:clear
+   php artisan cache:clear
+   php artisan route:clear
+   php artisan view:clear
+   
+   # Fix permissions
+   chmod -R 755 storage
+   chmod -R 755 bootstrap/cache
+   ```
 
-**Solution:**
-```bash
-# Create symbolic link
-php artisan storage:link
+### Database Connection Issues
 
-# Set permissions
-chmod -R 755 storage/app/public
-```
+1. **Verify Credentials:**
+   - Double-check database credentials in `.env`
+   - Test connection via phpMyAdmin
 
----
+2. **Connection Timeout:**
+   - Increase `max_execution_time` in php.ini
+   - Check database server status
 
-## 📱 Mobile App Configuration
+### API Not Working
 
-### Update Flutter App
+1. **Route Issues:**
+   ```bash
+   php artisan route:clear
+   php artisan route:cache
+   ```
 
-In your Flutter app, update the base URL:
+2. **CORS Issues:**
+   - Configure CORS for API access
+   - Check browser developer tools
+
+### Performance Issues
+
+1. **Enable Caching:**
+   ```bash
+   php artisan config:cache
+   php artisan route:cache
+   php artisan view:cache
+   ```
+
+2. **Optimize Database:**
+   - Add database indexes
+   - Optimize slow queries
+
+## 12. Flutter App Configuration
+
+After successful deployment, update your Flutter app:
 
 ```dart
-// lib/services/api_config.dart
+// lib/config/api_config.dart
 class ApiConfig {
-  static const String baseUrl = 'https://yourdomain.com/api/v1';
-  // ... rest of the code
+  static const String baseUrl = 'https://your-domain.com/api/v1';
+  // Remove localhost URLs
 }
 ```
 
-### Test API Endpoints
+## 13. Final Checklist
 
-Use the provided Postman collection to test all endpoints:
+### Pre-Launch Checklist
 
-1. **Import** `Ecommerce_API.postman_collection.json`
-2. **Update** the `base_url` variable to your domain
-3. **Test** all endpoints
-
----
-
-## 🔒 Security Checklist
-
-- [ ] SSL certificate enabled
-- [ ] `.env` file not accessible via web
-- [ ] Database credentials secure
+- [ ] SSL certificate installed and working
+- [ ] Database migrated successfully
+- [ ] All API endpoints tested
+- [ ] Authentication working properly
 - [ ] File permissions set correctly
-- [ ] Error reporting disabled in production
-- [ ] CORS configured properly
-- [ ] Rate limiting enabled
-- [ ] Input validation working
-- [ ] SQL injection protection active
+- [ ] Caches optimized for production
+- [ ] Error pages customized
+- [ ] Backup system in place
+- [ ] Monitoring tools configured
 
----
+### Post-Launch Monitoring
 
-## 📊 Monitoring
+- [ ] Monitor error logs daily
+- [ ] Check API response times
+- [ ] Monitor database performance
+- [ ] Regular security updates
+- [ ] Backup verification
+- [ ] User feedback collection
 
-### 1. Error Logs
+## Conclusion
 
-Monitor error logs:
-```bash
-tail -f storage/logs/laravel.log
-```
+🎉 **Your Laravel Jewelry Shop is now deployed on Hostinger!**
 
-### 2. Performance
+Your APIs are production-ready and optimized for Flutter application development. The deployment includes:
 
-Use Hostinger's built-in monitoring tools:
-- Resource usage
-- Response times
-- Error rates
+- ✅ Secure HTTPS access
+- ✅ Optimized performance
+- ✅ Database properly configured
+- ✅ Authentication system working
+- ✅ All API endpoints functional
 
-### 3. API Health
+Your Flutter app can now connect to the production APIs and provide a seamless shopping experience for your customers.
 
-Create a monitoring endpoint:
-```php
-// routes/api.php
-Route::get('/health', function () {
-    return response()->json([
-        'status' => 'healthy',
-        'timestamp' => now(),
-        'version' => '1.0.0'
-    ]);
-});
-```
+### Support Resources
 
----
+- **Hostinger Documentation:** https://support.hostinger.com
+- **Laravel Documentation:** https://laravel.com/docs
+- **API Testing Tools:** Postman, Insomnia
+- **Monitoring Tools:** Google Analytics, Uptime Robot
 
-## 🎉 Deployment Complete!
-
-Your API is now live at: `https://yourdomain.com/api/v1`
-
-**Next Steps:**
-1. **Test all endpoints** using Postman
-2. **Update Flutter app** with new base URL
-3. **Monitor performance** and error logs
-4. **Set up backups** for database
-5. **Configure monitoring** alerts
-
-**Support:**
-- Hostinger Support: Available 24/7
-- Laravel Documentation: https://laravel.com/docs
-- API Documentation: Check `API_DOCUMENTATION.md`
-
----
-
-## 📞 Quick Reference
-
-**API Base URL:** `https://yourdomain.com/api/v1`  
-**Health Check:** `https://yourdomain.com/api/health`  
-**Documentation:** `https://yourdomain.com/api/docs` (if you set up API docs)
-
-**Emergency Contacts:**
-- Hostinger Support: Available in control panel
-- Laravel Community: https://laravel.io/forum
-- Stack Overflow: Tag with `laravel` and `api`
+Remember to keep your application updated and monitor its performance regularly for the best user experience!

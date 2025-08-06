@@ -16,34 +16,38 @@ class MainController extends Controller
      */
     public function home()
     {
-        // Get featured products
-        $featuredProducts = Product::with(['category', 'images'])
-            ->where('status', 'active')
-            ->orderBy('created_at', 'desc')
-            ->limit(8)
-            ->get();
+        try {
+            // Fix: Remove status filters as 'status' column doesn't exist
+            
+            // Get featured products
+            $featuredProducts = Product::orderBy('created_at', 'desc')
+                ->limit(8)
+                ->get();
 
-        // Get categories
-        $categories = ProductCategory::with(['subcategories'])
-            ->where('status', 'active')
-            ->orderBy('name', 'asc')
-            ->get();
+            // Get categories
+            $categories = ProductCategory::orderBy('name', 'asc')->get();
 
-        // Get latest products
-        $latestProducts = Product::with(['category', 'images'])
-            ->where('status', 'active')
-            ->orderBy('created_at', 'desc')
-            ->limit(6)
-            ->get();
+            // Get latest products
+            $latestProducts = Product::orderBy('created_at', 'desc')
+                ->limit(6)
+                ->get();
 
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'featured_products' => $featuredProducts,
-                'categories' => $categories,
-                'latest_products' => $latestProducts,
-            ]
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'featured_products' => $featuredProducts,
+                    'categories' => $categories,
+                    'latest_products' => $latestProducts,
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch home data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

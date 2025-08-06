@@ -7,9 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password as PasswordRules;
+use Illuminate\Support\Facades\Password;
 
 class AuthController extends Controller
 {
@@ -20,12 +19,11 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => ['required', 'confirmed', PasswordRules::defaults()],
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
         ]);
-
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
@@ -33,7 +31,6 @@ class AuthController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
         try {
             $user = User::create([
                 'name' => $request->name,
@@ -41,29 +38,17 @@ class AuthController extends Controller
                 'password' => Hash::make($request->password),
                 'phone' => $request->phone,
                 'address' => $request->address,
-                'role' => User::ROLE_CUSTOMER,
+                'role' => 'user',
             ]);
-
             $token = $user->createToken('auth_token')->plainTextToken;
-
             return response()->json([
                 'status' => 'success',
-                'message' => 'User registered successfully',
+                'message' => 'Registration successful',
                 'data' => [
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'phone' => $user->phone,
-                        'address' => $user->address,
-                        'role' => $user->role,
-                        'created_at' => $user->created_at,
-                    ],
-                    'token' => $token,
-                    'token_type' => 'Bearer',
+                    'user' => $user,
+                    'token' => $token
                 ]
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -79,10 +64,9 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|string|email',
+            'email' => 'required|email',
             'password' => 'required|string',
         ]);
-
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
@@ -90,57 +74,60 @@ class AuthController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        try {
+            if (!Auth::attempt($request->only('email', 'password'))) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid credentials'
+                ], 401);
+            }
+            $user = User::where('email', $request->email)->first();
+            $token = $user->createToken('auth_token')->plainTextToken;
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Login successful',
+                'data' => [
+                    'user' => $user,
+                    'token' => $token
+                ]
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid credentials'
-            ], 401);
+                'message' => 'Login failed',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $user = User::where('email', $request->email)->firstOrFail();
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Login successful',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'address' => $user->address,
-                    'role' => $user->role,
-                ],
-                'token' => $token,
-                'token_type' => 'Bearer',
-            ]
-        ]);
     }
 
     /**
-     * Logout user
+     * Logout user (revoke token)
      */
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Logged out successfully'
-        ]);
+        try {
+            $request->user()->currentAccessToken()->delete();
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Logout successful'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Logout failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Send password reset link
+     * Forgot password (send reset link)
      */
     public function forgotPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|string|email',
+            'email' => 'required|email|exists:users,email',
         ]);
-
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
@@ -148,22 +135,28 @@ class AuthController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
-
-        if ($status === Password::RESET_LINK_SENT) {
+        try {
+            $status = Password::sendResetLink(
+                $request->only('email')
+            );
+            if ($status === Password::RESET_LINK_SENT) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Password reset link sent'
+                ]);
+            } else {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Failed to send reset link'
+                ], 500);
+            }
+        } catch (\Exception $e) {
             return response()->json([
-                'status' => 'success',
-                'message' => 'Password reset link sent to your email'
-            ]);
+                'status' => 'error',
+                'message' => 'Failed to send reset link',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Unable to send reset link'
-        ], 400);
     }
 
     /**
@@ -172,11 +165,10 @@ class AuthController extends Controller
     public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'token' => 'required|string',
-            'email' => 'required|string|email',
-            'password' => ['required', 'confirmed', PasswordRules::defaults()],
+            'token' => 'required',
+            'email' => 'required|email|exists:users,email',
+            'password' => 'required|string|min:8|confirmed',
         ]);
-
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
@@ -184,26 +176,32 @@ class AuthController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
-                $user->forceFill([
-                    'password' => Hash::make($password)
-                ])->save();
+        try {
+            $status = Password::reset(
+                $request->only('email', 'password', 'password_confirmation', 'token'),
+                function ($user, $password) {
+                    $user->forceFill([
+                        'password' => Hash::make($password)
+                    ])->save();
+                }
+            );
+            if ($status === Password::PASSWORD_RESET) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Password reset successful'
+                ]);
+            } else {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Failed to reset password'
+                ], 500);
             }
-        );
-
-        if ($status === Password::PASSWORD_RESET) {
+        } catch (\Exception $e) {
             return response()->json([
-                'status' => 'success',
-                'message' => 'Password reset successfully'
-            ]);
+                'status' => 'error',
+                'message' => 'Failed to reset password',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Unable to reset password'
-        ], 400);
     }
 }

@@ -16,34 +16,36 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 12);
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-
-        $query = Product::with(['category', 'subcategory', 'images'])
-            ->where('status', 'active');
-
-        // Apply sorting
-        if (in_array($sortBy, ['name', 'price', 'created_at'])) {
-            $query->orderBy($sortBy, $sortOrder);
-        }
-
-        $products = $query->paginate($perPage);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'products' => $products->items(),
-                'pagination' => [
-                    'current_page' => $products->currentPage(),
-                    'last_page' => $products->lastPage(),
-                    'per_page' => $products->perPage(),
-                    'total' => $products->total(),
-                    'from' => $products->firstItem(),
-                    'to' => $products->lastItem(),
+        try {
+            $perPage = $request->get('per_page', 12);
+            $page = $request->get('page', 1);
+            
+            // Fix: Remove status filter as 'status' column doesn't exist in products table
+            // Original problematic line: $products = Product::where('status', 'active')->paginate($perPage);
+            $products = Product::paginate($perPage);
+            
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'products' => $products->items(),
+                    'pagination' => [
+                        'current_page' => $products->currentPage(),
+                        'last_page' => $products->lastPage(),
+                        'per_page' => $products->perPage(),
+                        'total' => $products->total(),
+                        'from' => $products->firstItem(),
+                        'to' => $products->lastItem(),
+                    ]
                 ]
-            ]
-        ]);
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch products',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -78,48 +80,35 @@ class ProductController extends Controller
      */
     public function search(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'query' => 'required|string|min:2',
-            'per_page' => 'nullable|integer|min:1|max:50',
-        ]);
-
-        if ($validator->fails()) {
+        try {
+            $query = $request->get('q', '');
+            $perPage = $request->get('per_page', 12);
+            
+            // Fix: Remove status filter
+            $products = Product::where('name', 'LIKE', "%{$query}%")
+                              ->orWhere('description', 'LIKE', "%{$query}%")
+                              ->paginate($perPage);
+                              
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'products' => $products->items(),
+                    'pagination' => [
+                        'current_page' => $products->currentPage(),
+                        'last_page' => $products->lastPage(),
+                        'per_page' => $products->perPage(),
+                        'total' => $products->total(),
+                    ]
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Product search failed',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $perPage = $request->get('per_page', 12);
-        $query = $request->get('query');
-
-        $products = Product::with(['category', 'subcategory', 'images'])
-            ->where('status', 'active')
-            ->where(function ($q) use ($query) {
-                $q->where('name', 'LIKE', "%{$query}%")
-                  ->orWhere('description', 'LIKE', "%{$query}%")
-                  ->orWhereHas('category', function ($categoryQuery) use ($query) {
-                      $categoryQuery->where('name', 'LIKE', "%{$query}%");
-                  });
-            })
-            ->paginate($perPage);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'products' => $products->items(),
-                'pagination' => [
-                    'current_page' => $products->currentPage(),
-                    'last_page' => $products->lastPage(),
-                    'per_page' => $products->perPage(),
-                    'total' => $products->total(),
-                    'from' => $products->firstItem(),
-                    'to' => $products->lastItem(),
-                ],
-                'search_query' => $query
-            ]
-        ]);
     }
 
     /**

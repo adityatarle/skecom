@@ -15,9 +15,7 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        try {
-            // Fix: Remove status filter as 'status' column may not exist
-            $categories = ProductCategory::orderBy('name', 'asc')->get();
+
 
             return response()->json([
                 'status' => 'success',
@@ -55,12 +53,7 @@ class CategoryController extends Controller
      */
     public function products(Request $request, ProductCategory $category)
     {
-        try {
-            $perPage = $request->get('per_page', 12);
-            
-            // Fix: Remove status filter and relationship issues
-            $products = Product::where('category_id', $category->id)
-                ->paginate($perPage);
+
 
             return response()->json([
                 'status' => 'success',

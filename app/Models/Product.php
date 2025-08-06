@@ -22,7 +22,8 @@ class Product extends Model
         'category_id',
         'sub_category_id',
         'labour_charges',
-        'gst_percentage'
+        'gst_percentage',
+        'status',
     ];
 
      protected $casts = [

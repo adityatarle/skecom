@@ -1,53 +1,27 @@
 {
   "info": {
-    "name": "Ecommerce Mobile API",
-    "description": "Complete API collection for ecommerce mobile application",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "_postman_id": "ecommerce-api-collection-v1",
+    "name": "Ecommerce API v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman collection for the redesigned Ecommerce API (v1). All endpoints are under /api/v1/. Use the {{base_url}} variable for the host."
   },
   "variable": [
-    {
-      "key": "base_url",
-      "value": "https://yourdomain.com/api/v1",
-      "type": "string"
-    },
-    {
-      "key": "auth_token",
-      "value": "",
-      "type": "string"
-    }
+    { "key": "base_url", "value": "http://127.0.0.1:8000/api/v1" },
+    { "key": "auth_token", "value": "" }
   ],
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{auth_token}}",
-        "type": "string"
-      }
-    ]
-  },
   "item": [
     {
-      "name": "Authentication",
+      "name": "Auth",
       "item": [
         {
           "name": "Register",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/register", "host": [ "{{base_url}}" ], "path": [ "register" ] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Test St\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/register",
-              "host": ["{{base_url}}"],
-              "path": ["register"]
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"phone\": \"1234567890\",\n  \"address\": \"123 Main St\"\n}"
             }
           }
         },
@@ -55,20 +29,11 @@
           "name": "Login",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/login", "host": [ "{{base_url}}" ], "path": [ "login" ] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/login",
-              "host": ["{{base_url}}"],
-              "path": ["login"]
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
             }
           }
         },
@@ -76,11 +41,22 @@
           "name": "Logout",
           "request": {
             "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/user/logout",
-              "host": ["{{base_url}}"],
-              "path": ["user", "logout"]
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/user/logout", "host": [ "{{base_url}}" ], "path": [ "user", "logout" ] }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/forgot-password", "host": [ "{{base_url}}" ], "path": [ "forgot-password" ] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\"\n}"
             }
           }
         }
@@ -90,63 +66,71 @@
       "name": "Products",
       "item": [
         {
-          "name": "Get All Products",
+          "name": "List Products",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/products?per_page=12&sort_by=created_at&sort_order=desc",
-              "host": ["{{base_url}}"],
-              "path": ["products"],
-              "query": [
-                {
-                  "key": "per_page",
-                  "value": "12"
-                },
-                {
-                  "key": "sort_by",
-                  "value": "created_at"
-                },
-                {
-                  "key": "sort_order",
-                  "value": "desc"
-                }
-              ]
-            }
+            "url": { "raw": "{{base_url}}/products", "host": [ "{{base_url}}" ], "path": [ "products" ] }
           }
         },
         {
-          "name": "Get Product Details",
+          "name": "Product Details",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/products/1",
-              "host": ["{{base_url}}"],
-              "path": ["products", "1"]
-            }
+            "url": { "raw": "{{base_url}}/products/1", "host": [ "{{base_url}}" ], "path": [ "products", "1" ] }
           }
         },
         {
           "name": "Search Products",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/products/search?query=test&per_page=12",
-              "host": ["{{base_url}}"],
-              "path": ["products", "search"],
-              "query": [
-                {
-                  "key": "query",
-                  "value": "test"
-                },
-                {
-                  "key": "per_page",
-                  "value": "12"
-                }
-              ]
-            }
+            "url": { "raw": "{{base_url}}/products/search?q=ring", "host": [ "{{base_url}}" ], "path": [ "products", "search" ], "query": [ { "key": "q", "value": "ring" } ] }
+          }
+        },
+        {
+          "name": "Filter Products",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/products/filter?category_id=1&min_price=100&max_price=500", "host": [ "{{base_url}}" ], "path": [ "products", "filter" ], "query": [ { "key": "category_id", "value": "1" }, { "key": "min_price", "value": "100" }, { "key": "max_price", "value": "500" } ] }
+          }
+        },
+        {
+          "name": "Featured Products",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/products/featured", "host": [ "{{base_url}}" ], "path": [ "products", "featured" ] }
+          }
+        },
+        {
+          "name": "On Sale Products",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/products/on-sale", "host": [ "{{base_url}}" ], "path": [ "products", "on-sale" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/categories", "host": [ "{{base_url}}" ], "path": [ "categories" ] }
+          }
+        },
+        {
+          "name": "Category Details",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/categories/1", "host": [ "{{base_url}}" ], "path": [ "categories", "1" ] }
+          }
+        },
+        {
+          "name": "List Subcategories",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/categories/1/subcategories", "host": [ "{{base_url}}" ], "path": [ "categories", "1", "subcategories" ] }
           }
         }
       ]
@@ -158,20 +142,11 @@
           "name": "Add to Cart (Guest)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/cart/add", "host": [ "{{base_url}}" ], "path": [ "cart", "add" ] },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 2\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/cart/add",
-              "host": ["{{base_url}}"],
-              "path": ["cart", "add"]
             }
           }
         },
@@ -179,45 +154,7 @@
           "name": "Get Cart (Guest)",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/cart",
-              "host": ["{{base_url}}"],
-              "path": ["cart"]
-            }
-          }
-        },
-        {
-          "name": "Add to Cart (User)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 2\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/user/cart/add",
-              "host": ["{{base_url}}"],
-              "path": ["user", "cart", "add"]
-            }
-          }
-        },
-        {
-          "name": "Get Cart (User)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/user/cart",
-              "host": ["{{base_url}}"],
-              "path": ["user", "cart"]
-            }
+            "url": { "raw": "{{base_url}}/cart", "host": [ "{{base_url}}" ], "path": [ "cart" ] }
           }
         }
       ]
@@ -226,62 +163,26 @@
       "name": "Orders",
       "item": [
         {
-          "name": "Get User Orders",
+          "name": "Place Order",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/orders",
-              "host": ["{{base_url}}"],
-              "path": ["orders"]
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/orders", "host": [ "{{base_url}}" ], "path": [ "orders" ] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"products\": [\n    { \"product_id\": 1, \"quantity\": 2 },\n    { \"product_id\": 2, \"quantity\": 1 }\n  ],\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"1234567890\",\n  \"street_address\": \"123 Main St\",\n  \"city\": \"City\",\n  \"state\": \"State\",\n  \"country\": \"Country\",\n  \"payment_method\": \"cash_on_delivery\",\n  \"notes\": \"\"\n}"
             }
           }
         },
         {
-          "name": "Create Order",
+          "name": "List Orders",
           "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"products\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 2\n    }\n  ],\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+1234567890\",\n  \"street_address\": \"123 Main St\",\n  \"city\": \"City\",\n  \"state\": \"State\",\n  \"country\": \"Country\",\n  \"payment_method\": \"cash_on_delivery\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/orders",
-              "host": ["{{base_url}}"],
-              "path": ["orders"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Payments",
-      "item": [
-        {
-          "name": "Create Payment Order",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"amount\": 129.79,\n  \"currency\": \"INR\",\n  \"receipt\": \"order_123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/payment/create-order",
-              "host": ["{{base_url}}"],
-              "path": ["payment", "create-order"]
-            }
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{auth_token}}" } ],
+            "url": { "raw": "{{base_url}}/orders", "host": [ "{{base_url}}" ], "path": [ "orders" ] }
           }
         }
       ]

@@ -12,61 +12,74 @@ use Illuminate\Support\Facades\DB;
 class OrderController extends Controller
 {
     /**
-     * Get user's orders
+     * List user's orders
      */
     public function index(Request $request)
     {
-        $user = auth()->user();
-        $perPage = $request->get('per_page', 10);
-        $status = $request->get('status');
+        try {
+            $user = auth()->user();
+            $perPage = $request->get('per_page', 10);
+            $status = $request->get('status');
 
-        $query = $user->orders();
+            $query = $user->orders();
+            if ($status) {
+                $query->where('status', $status);
+            }
+            $orders = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        $orders = $query->orderBy('created_at', 'desc')->paginate($perPage);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'orders' => $orders->items(),
-                'pagination' => [
-                    'current_page' => $orders->currentPage(),
-                    'last_page' => $orders->lastPage(),
-                    'per_page' => $orders->perPage(),
-                    'total' => $orders->total(),
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Orders retrieved successfully',
+                'data' => [
+                    'orders' => $orders->items(),
+                    'pagination' => [
+                        'current_page' => $orders->currentPage(),
+                        'last_page' => $orders->lastPage(),
+                        'per_page' => $orders->perPage(),
+                        'total' => $orders->total(),
+                    ]
                 ]
-            ]
-        ]);
-    }
-
-    /**
-     * Get specific order
-     */
-    public function show(Order $order)
-    {
-        // Check if user owns this order
-        if ($order->user_id !== auth()->id()) {
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized access'
-            ], 403);
+                'message' => 'Failed to retrieve orders',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $order->load(['orderItems.product']);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'order' => $order
-            ]
-        ]);
     }
 
     /**
-     * Create new order
+     * Show a specific order
+     */
+    public function show($id)
+    {
+        try {
+            $order = Order::with(['orderItems.product'])->find($id);
+            if (!$order || $order->user_id !== auth()->id()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Order not found or unauthorized'
+                ], 404);
+            }
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Order retrieved successfully',
+                'data' => [
+                    'order' => $order
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to retrieve order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Place a new order
      */
     public function store(Request $request)
     {
@@ -85,7 +98,6 @@ class OrderController extends Controller
             'payment_method' => 'required|in:cash_on_delivery,razorpay',
             'notes' => 'nullable|string|max:1000',
         ]);
-
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
@@ -93,41 +105,31 @@ class OrderController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
         try {
             DB::beginTransaction();
-
             $user = auth()->user();
             $products = $request->products;
+            $orderItems = [];
             $totalPrice = 0;
-            $orderProducts = [];
-
-            // Calculate total and validate products
             foreach ($products as $item) {
                 $product = Product::find($item['product_id']);
-                
                 if (!$product || $product->status !== 'active') {
-                    throw new \Exception("Product {$product->name} is not available");
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Product not available',
+                        'product_id' => $item['product_id']
+                    ], 404);
                 }
-
-                $price = $product->price;
-                $quantity = $item['quantity'];
-                $subtotal = $price * $quantity;
-                $totalPrice += $subtotal;
-
-                $orderProducts[] = [
+                $orderItems[] = [
                     'product_id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $price,
-                    'quantity' => $quantity,
-                    'subtotal' => $subtotal,
+                    'quantity' => $item['quantity'],
+                    'price' => $product->price,
                 ];
+                $totalPrice += $product->price * $item['quantity'];
             }
-
-            // Create order
             $order = Order::create([
                 'user_id' => $user->id,
-                'products' => $orderProducts,
+                'products' => json_encode($products),
                 'total_price' => $totalPrice,
                 'status' => 'pending',
                 'first_name' => $request->first_name,
@@ -141,35 +143,22 @@ class OrderController extends Controller
                 'payment_method' => $request->payment_method,
                 'notes' => $request->notes,
             ]);
-
-            // Create order items
-            foreach ($orderProducts as $item) {
-                $order->orderItems()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'subtotal' => $item['subtotal'],
-                ]);
+            // Save order items (if you have an order_items table)
+            if (method_exists($order, 'orderItems')) {
+                foreach ($orderItems as $item) {
+                    $order->orderItems()->create($item);
+                }
             }
-
-            // Clear user's cart after successful order
-            $user->cart()->delete();
-
             DB::commit();
-
             return response()->json([
                 'status' => 'success',
                 'message' => 'Order placed successfully',
                 'data' => [
-                    'order' => $order->load(['orderItems.product']),
-                    'order_id' => $order->id,
-                    'total_amount' => $totalPrice,
+                    'order' => $order
                 ]
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
-
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to place order',
@@ -179,148 +168,80 @@ class OrderController extends Controller
     }
 
     /**
-     * Reorder - add all items from a previous order to cart
+     * Track an order
      */
-    public function reorder(Order $order)
+    public function track($id)
     {
-        // Check if user owns this order
-        if ($order->user_id !== auth()->id()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized access'
-            ], 403);
-        }
-
         try {
-            $user = auth()->user();
-            $addedItems = 0;
-
-            foreach ($order->products as $item) {
-                $product = Product::find($item['product_id']);
-                
-                if ($product && $product->status === 'active') {
-                    // Check if product already exists in cart
-                    $existingCartItem = $user->cart()->where('product_id', $product->id)->first();
-
-                    if ($existingCartItem) {
-                        $existingCartItem->update([
-                            'quantity' => $existingCartItem->quantity + $item['quantity']
-                        ]);
-                    } else {
-                        $user->cart()->create([
-                            'product_id' => $product->id,
-                            'quantity' => $item['quantity'],
-                            'price' => $product->price,
-                        ]);
-                    }
-                    $addedItems++;
-                }
+            $order = Order::find($id);
+            if (!$order || $order->user_id !== auth()->id()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Order not found or unauthorized'
+                ], 404);
             }
-
             return response()->json([
                 'status' => 'success',
-                'message' => "Added {$addedItems} items to cart",
+                'message' => 'Order status retrieved successfully',
                 'data' => [
-                    'items_added' => $addedItems,
-                    'cart_count' => $user->cart()->count()
+                    'order_id' => $order->id,
+                    'status' => $order->status,
+                    'updated_at' => $order->updated_at,
                 ]
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to reorder',
+                'message' => 'Failed to track order',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Track order status
+     * Cancel an order (if allowed)
      */
-    public function track(Order $order)
+    public function cancel($id)
     {
-        // Check if user owns this order
-        if ($order->user_id !== auth()->id()) {
+        try {
+            $order = Order::find($id);
+            if (!$order || $order->user_id !== auth()->id()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Order not found or unauthorized'
+                ], 404);
+            }
+            if (!in_array($order->status, ['pending', 'processing'])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Order cannot be cancelled at this stage'
+                ], 400);
+            }
+            $order->update(['status' => 'cancelled']);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Order cancelled successfully',
+                'data' => [
+                    'order' => $order
+                ]
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized access'
-            ], 403);
+                'message' => 'Failed to cancel order',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $statusHistory = [
-            'pending' => 'Order placed and awaiting confirmation',
-            'confirmed' => 'Order confirmed and being processed',
-            'processing' => 'Order is being prepared',
-            'shipped' => 'Order has been shipped',
-            'delivered' => 'Order has been delivered',
-            'cancelled' => 'Order has been cancelled',
-            'failed' => 'Order payment failed',
-        ];
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'order_id' => $order->id,
-                'current_status' => $order->status,
-                'status_description' => $statusHistory[$order->status] ?? 'Unknown status',
-                'order_date' => $order->created_at,
-                'last_updated' => $order->updated_at,
-                'estimated_delivery' => $this->getEstimatedDelivery($order),
-            ]
-        ]);
-    }
-
-    /**
-     * Admin: Get all orders
-     */
-    public function adminIndex(Request $request)
-    {
-        $perPage = $request->get('per_page', 20);
-        $status = $request->get('status');
-        $search = $request->get('search');
-
-        $query = Order::with(['user', 'orderItems.product']);
-
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('id', 'LIKE', "%{$search}%")
-                  ->orWhere('email', 'LIKE', "%{$search}%")
-                  ->orWhere('first_name', 'LIKE', "%{$search}%")
-                  ->orWhere('last_name', 'LIKE', "%{$search}%");
-            });
-        }
-
-        $orders = $query->orderBy('created_at', 'desc')->paginate($perPage);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'orders' => $orders->items(),
-                'pagination' => [
-                    'current_page' => $orders->currentPage(),
-                    'last_page' => $orders->lastPage(),
-                    'per_page' => $orders->perPage(),
-                    'total' => $orders->total(),
-                ]
-            ]
-        ]);
     }
 
     /**
      * Admin: Update order status
      */
-    public function updateStatus(Request $request, Order $order)
+    public function updateStatus(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled,failed',
-            'notes' => 'nullable|string|max:500',
+            'status' => 'required|string',
         ]);
-
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
@@ -328,71 +249,28 @@ class OrderController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
         try {
-            $order->update([
-                'status' => $request->status,
-                'notes' => $request->notes,
-            ]);
-
+            $order = Order::find($id);
+            if (!$order) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Order not found'
+                ], 404);
+            }
+            $order->update(['status' => $request->status]);
             return response()->json([
                 'status' => 'success',
                 'message' => 'Order status updated successfully',
                 'data' => [
-                    'order' => $order->load(['user', 'orderItems.product'])
+                    'order' => $order
                 ]
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to update order status',
                 'error' => $e->getMessage()
             ], 500);
-        }
-    }
-
-    /**
-     * Admin: Delete order
-     */
-    public function destroy(Order $order)
-    {
-        try {
-            $order->delete();
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Order deleted successfully'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to delete order',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Get estimated delivery date
-     */
-    private function getEstimatedDelivery($order)
-    {
-        $orderDate = $order->created_at;
-        
-        switch ($order->status) {
-            case 'pending':
-            case 'confirmed':
-                return $orderDate->addDays(7)->format('Y-m-d');
-            case 'processing':
-                return $orderDate->addDays(5)->format('Y-m-d');
-            case 'shipped':
-                return $orderDate->addDays(2)->format('Y-m-d');
-            case 'delivered':
-                return 'Delivered on ' . $order->updated_at->format('Y-m-d');
-            default:
-                return null;
         }
     }
 }

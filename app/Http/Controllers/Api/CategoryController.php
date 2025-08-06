@@ -15,7 +15,8 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         $categories = ProductCategory::with(['subcategories'])
-            ->where('status', 'active')
+            // MODIFIED: Changed from 'status', 'active' to the correct column and value
+            ->where('is_active', 1)
             ->orderBy('name', 'asc')
             ->get();
 
@@ -54,7 +55,8 @@ class CategoryController extends Controller
 
         $query = $category->products()
             ->with(['subcategory', 'images'])
-            ->where('status', 'active');
+            // MODIFIED: Assuming your 'products' table also uses 'is_active' = 1 for active products
+            ->where('is_active', 1);
 
         // Filter by subcategory if provided
         if ($subCategoryId) {

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Validator;
 class ProductController extends Controller
 {
     /**
-     * Get all products with pagination
+     * Get all active products with pagination
      */
     public function index(Request $request)
     {
@@ -20,12 +20,27 @@ class ProductController extends Controller
             $perPage = $request->get('per_page', 12);
             $page = $request->get('page', 1);
             
-            // Fix: Remove status filter as 'status' column doesn't exist in products table
-            // Original problematic line: $products = Product::where('status', 'active')->paginate($perPage);
-            $products = Product::paginate($perPage);
+            $query = Product::with(['category', 'subcategory', 'images'])
+                ->where('status', 'active');
+            
+            // Apply filters
+            if ($request->has('category_id')) {
+                $query->where('category_id', $request->category_id);
+            }
+            
+            if ($request->has('featured')) {
+                $query->where('featured', $request->featured);
+            }
+            
+            if ($request->has('on_sale')) {
+                $query->where('on_sale', $request->on_sale);
+            }
+            
+            $products = $query->orderBy('created_at', 'desc')->paginate($perPage);
             
             return response()->json([
                 'status' => 'success',
+                'message' => 'Products retrieved successfully',
                 'data' => [
                     'products' => $products->items(),
                     'pagination' => [
@@ -49,30 +64,50 @@ class ProductController extends Controller
     }
 
     /**
-     * Get a specific product
+     * Get a specific product with details
      */
-    public function show(Product $product)
+    public function show($id)
     {
-        $product->load(['category', 'subcategory', 'images', 'pricingDetails']);
+        try {
+            $product = Product::with(['category', 'subcategory', 'images', 'pricingDetails'])
+                ->where('status', 'active')
+                ->find($id);
 
-        // Get pricing breakdown
-        $pricingBreakup = $product->getPricingBreakup();
+            if (!$product) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Product not found'
+                ], 404);
+            }
 
-        // Get related products
-        $relatedProducts = Product::with(['category', 'images'])
-            ->where('category_id', $product->category_id)
-            ->where('id', '!=', $product->id)
-            ->limit(4)
-            ->get();
+            // Get pricing breakdown
+            $pricingBreakup = $product->getPricingBreakup();
 
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'product' => $product,
-                'pricing_breakup' => $pricingBreakup,
-                'related_products' => $relatedProducts
-            ]
-        ]);
+            // Get related products
+            $relatedProducts = Product::with(['category', 'images'])
+                ->where('category_id', $product->category_id)
+                ->where('id', '!=', $product->id)
+                ->where('status', 'active')
+                ->limit(4)
+                ->get();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Product retrieved successfully',
+                'data' => [
+                    'product' => $product,
+                    'pricing_breakup' => $pricingBreakup,
+                    'related_products' => $relatedProducts
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch product',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -81,16 +116,237 @@ class ProductController extends Controller
     public function search(Request $request)
     {
         try {
-            $query = $request->get('q', '');
+            $validator = Validator::make($request->all(), [
+                'q' => 'required|string|min:1',
+                'per_page' => 'nullable|integer|min:1|max:50',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $query = $request->get('q');
             $perPage = $request->get('per_page', 12);
             
-            // Fix: Remove status filter
-            $products = Product::where('name', 'LIKE', "%{$query}%")
-                              ->orWhere('description', 'LIKE', "%{$query}%")
-                              ->paginate($perPage);
+            $products = Product::with(['category', 'images'])
+                ->where('status', 'active')
+                ->where(function($q) use ($query) {
+                    $q->where('name', 'LIKE', "%{$query}%")
+                      ->orWhere('description', 'LIKE', "%{$query}%");
+                })
+                ->paginate($perPage);
                               
             return response()->json([
                 'status' => 'success',
+                'message' => 'Search completed successfully',
+                'data' => [
+                    'products' => $products->items(),
+                    'pagination' => [
+                        'current_page' => $products->currentPage(),
+                        'last_page' => $products->lastPage(),
+                        'per_page' => $products->perPage(),
+                        'total' => $products->total(),
+                        'from' => $products->firstItem(),
+                        'to' => $products->lastItem(),
+                    ]
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Search failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Filter products by category, price range, etc.
+     */
+    public function filter(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'category_id' => 'nullable|exists:product_categories,id',
+                'sub_category_id' => 'nullable|exists:subcategories,id',
+                'min_price' => 'nullable|numeric|min:0',
+                'max_price' => 'nullable|numeric|min:0',
+                'featured' => 'nullable|boolean',
+                'on_sale' => 'nullable|boolean',
+                'per_page' => 'nullable|integer|min:1|max:50',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $query = Product::with(['category', 'subcategory', 'images'])
+                ->where('status', 'active');
+
+            // Apply filters
+            if ($request->has('category_id')) {
+                $query->where('category_id', $request->category_id);
+            }
+
+            if ($request->has('sub_category_id')) {
+                $query->where('sub_category_id', $request->sub_category_id);
+            }
+
+            if ($request->has('min_price')) {
+                $query->where('price', '>=', $request->min_price);
+            }
+
+            if ($request->has('max_price')) {
+                $query->where('price', '<=', $request->max_price);
+            }
+
+            if ($request->has('featured')) {
+                $query->where('featured', $request->featured);
+            }
+
+            if ($request->has('on_sale')) {
+                $query->where('on_sale', $request->on_sale);
+            }
+
+            $perPage = $request->get('per_page', 12);
+            $products = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Products filtered successfully',
+                'data' => [
+                    'products' => $products->items(),
+                    'pagination' => [
+                        'current_page' => $products->currentPage(),
+                        'last_page' => $products->lastPage(),
+                        'per_page' => $products->perPage(),
+                        'total' => $products->total(),
+                        'from' => $products->firstItem(),
+                        'to' => $products->lastItem(),
+                    ]
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Filter failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Submit product inquiry
+     */
+    public function storeInquiry(Request $request, $productId)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255',
+                'phone' => 'required|string|max:20',
+                'message' => 'required|string|max:1000',
+                'quantity' => 'nullable|integer|min:1',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $product = Product::where('status', 'active')->find($productId);
+            
+            if (!$product) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Product not found'
+                ], 404);
+            }
+
+            $inquiry = ProductInquiry::create([
+                'product_id' => $productId,
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'message' => $request->message,
+                'quantity' => $request->quantity ?? 1,
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Inquiry submitted successfully',
+                'data' => [
+                    'inquiry' => $inquiry
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to submit inquiry',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get featured products
+     */
+    public function featured()
+    {
+        try {
+            $products = Product::with(['category', 'images'])
+                ->where('status', 'active')
+                ->where('featured', true)
+                ->orderBy('created_at', 'desc')
+                ->limit(8)
+                ->get();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Featured products retrieved successfully',
+                'data' => [
+                    'products' => $products
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch featured products',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get products on sale
+     */
+    public function onSale()
+    {
+        try {
+            $products = Product::with(['category', 'images'])
+                ->where('status', 'active')
+                ->where('on_sale', true)
+                ->orderBy('created_at', 'desc')
+                ->paginate(12);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Sale products retrieved successfully',
                 'data' => [
                     'products' => $products->items(),
                     'pagination' => [
@@ -105,277 +361,7 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Product search failed',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Filter products
-     */
-    public function filter(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'category_id' => 'nullable|integer|exists:product_categories,id',
-            'sub_category_id' => 'nullable|integer|exists:subcategories,id',
-            'min_price' => 'nullable|numeric|min:0',
-            'max_price' => 'nullable|numeric|min:0',
-            'per_page' => 'nullable|integer|min:1|max:50',
-            'sort_by' => 'nullable|in:name,price,created_at',
-            'sort_order' => 'nullable|in:asc,desc',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $perPage = $request->get('per_page', 12);
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-
-        $query = Product::with(['category', 'subcategory', 'images'])
-            ->where('status', 'active');
-
-        // Apply filters
-        if ($request->has('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
-
-        if ($request->has('sub_category_id')) {
-            $query->where('sub_category_id', $request->sub_category_id);
-        }
-
-        if ($request->has('min_price')) {
-            $query->where('price', '>=', $request->min_price);
-        }
-
-        if ($request->has('max_price')) {
-            $query->where('price', '<=', $request->max_price);
-        }
-
-        // Apply sorting
-        $query->orderBy($sortBy, $sortOrder);
-
-        $products = $query->paginate($perPage);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'products' => $products->items(),
-                'pagination' => [
-                    'current_page' => $products->currentPage(),
-                    'last_page' => $products->lastPage(),
-                    'per_page' => $products->perPage(),
-                    'total' => $products->total(),
-                    'from' => $products->firstItem(),
-                    'to' => $products->lastItem(),
-                ],
-                'filters_applied' => $request->only(['category_id', 'sub_category_id', 'min_price', 'max_price'])
-            ]
-        ]);
-    }
-
-    /**
-     * Store product inquiry
-     */
-    public function storeInquiry(Request $request, Product $product)
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'phone' => 'required|string|max:20',
-            'message' => 'required|string|max:1000',
-            'quantity' => 'nullable|integer|min:1',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
-            $inquiry = ProductInquiry::create([
-                'product_id' => $product->id,
-                'user_id' => auth()->id(),
-                'name' => $request->name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'message' => $request->message,
-                'quantity' => $request->quantity ?? 1,
-            ]);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Inquiry submitted successfully',
-                'data' => [
-                    'inquiry' => $inquiry
-                ]
-            ], 201);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to submit inquiry',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Admin: Get all products (for admin panel)
-     */
-    public function adminIndex(Request $request)
-    {
-        $perPage = $request->get('per_page', 20);
-        $search = $request->get('search');
-        $categoryId = $request->get('category_id');
-        $status = $request->get('status');
-
-        $query = Product::with(['category', 'subcategory', 'images']);
-
-        if ($search) {
-            $query->where('name', 'LIKE', "%{$search}%");
-        }
-
-        if ($categoryId) {
-            $query->where('category_id', $categoryId);
-        }
-
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        $products = $query->orderBy('created_at', 'desc')->paginate($perPage);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'products' => $products->items(),
-                'pagination' => [
-                    'current_page' => $products->currentPage(),
-                    'last_page' => $products->lastPage(),
-                    'per_page' => $products->perPage(),
-                    'total' => $products->total(),
-                ]
-            ]
-        ]);
-    }
-
-    /**
-     * Admin: Store new product
-     */
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'category_id' => 'required|exists:product_categories,id',
-            'sub_category_id' => 'nullable|exists:subcategories,id',
-            'labour_charges' => 'nullable|numeric|min:0',
-            'gst_percentage' => 'nullable|numeric|min:0|max:100',
-            'status' => 'required|in:active,inactive',
-            'image_path' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
-            $product = Product::create($request->all());
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Product created successfully',
-                'data' => [
-                    'product' => $product->load(['category', 'subcategory'])
-                ]
-            ], 201);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to create product',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Admin: Update product
-     */
-    public function update(Request $request, Product $product)
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'category_id' => 'required|exists:product_categories,id',
-            'sub_category_id' => 'nullable|exists:subcategories,id',
-            'labour_charges' => 'nullable|numeric|min:0',
-            'gst_percentage' => 'nullable|numeric|min:0|max:100',
-            'status' => 'required|in:active,inactive',
-            'image_path' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
-            $product->update($request->all());
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Product updated successfully',
-                'data' => [
-                    'product' => $product->load(['category', 'subcategory'])
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to update product',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Admin: Delete product
-     */
-    public function destroy(Product $product)
-    {
-        try {
-            $product->delete();
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Product deleted successfully'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to delete product',
+                'message' => 'Failed to fetch sale products',
                 'error' => $e->getMessage()
             ], 500);
         }

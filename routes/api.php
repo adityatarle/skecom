@@ -35,14 +35,17 @@ Route::prefix('v1')->group(function () {
     
     // Public Product Routes
     Route::get('/products', [ProductController::class, 'index']);
-    Route::get('/products/{product}', [ProductController::class, 'show']);
+    Route::get('/products/{id}', [ProductController::class, 'show']);
     Route::get('/products/search', [ProductController::class, 'search']);
     Route::get('/products/filter', [ProductController::class, 'filter']);
+    Route::get('/products/featured', [ProductController::class, 'featured']);
+    Route::get('/products/on-sale', [ProductController::class, 'onSale']);
     
     // Public Category Routes
     Route::get('/categories', [CategoryController::class, 'index']);
-    Route::get('/categories/{category}', [CategoryController::class, 'show']);
-    Route::get('/categories/{category}/products', [CategoryController::class, 'products']);
+    Route::get('/categories/{id}', [CategoryController::class, 'show']);
+    Route::get('/categories/{categoryId}/subcategories', [CategoryController::class, 'subcategories']);
+    Route::get('/subcategories/{id}', [CategoryController::class, 'showSubcategory']);
     
     // Public Main Routes
     Route::get('/home', [MainController::class, 'home']);
@@ -80,6 +83,8 @@ Route::prefix('v1')->group(function () {
         Route::put('/user/profile', [UserController::class, 'updateProfile']);
         Route::post('/user/change-password', [UserController::class, 'changePassword']);
         Route::post('/user/logout', [AuthController::class, 'logout']);
+        Route::get('/user/dashboard', [UserController::class, 'dashboard']);
+        Route::post('/user/delete-account', [UserController::class, 'deleteAccount']);
         
         // Authenticated Cart Routes (Database-based)
         Route::post('/user/cart/add', [CartController::class, 'addToUserCart']);
@@ -92,13 +97,15 @@ Route::prefix('v1')->group(function () {
         Route::post('/user/wishlist/add', [WishlistController::class, 'addToUserWishlist']);
         Route::get('/user/wishlist', [WishlistController::class, 'userWishlist']);
         Route::delete('/user/wishlist/remove/{productId}', [WishlistController::class, 'removeFromUserWishlist']);
+        Route::get('/user/wishlist/check/{productId}', [WishlistController::class, 'checkWishlist']);
+        Route::delete('/user/wishlist/clear', [WishlistController::class, 'clearUserWishlist']);
         
         // Order Routes
         Route::get('/orders', [OrderController::class, 'index']);
-        Route::get('/orders/{order}', [OrderController::class, 'show']);
+        Route::get('/orders/{id}', [OrderController::class, 'show']);
         Route::post('/orders', [OrderController::class, 'store']);
-        Route::post('/orders/{order}/reorder', [OrderController::class, 'reorder']);
-        Route::get('/orders/{order}/track', [OrderController::class, 'track']);
+        Route::get('/orders/{id}/track', [OrderController::class, 'track']);
+        Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
         
         // Review Routes
         Route::get('/reviews', [ReviewController::class, 'index']);
@@ -107,7 +114,7 @@ Route::prefix('v1')->group(function () {
         Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
         
         // Product Inquiry Routes
-        Route::post('/products/{product}/inquiry', [ProductController::class, 'storeInquiry']);
+        Route::post('/products/{productId}/inquiry', [ProductController::class, 'storeInquiry']);
         
     });
     
@@ -125,12 +132,14 @@ Route::prefix('v1')->group(function () {
         
         // Admin Order Management
         Route::get('/orders', [OrderController::class, 'adminIndex']);
-        Route::put('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+        Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
         Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
         
         // Admin User Management
         Route::get('/users', [UserController::class, 'adminIndex']);
         Route::get('/users/{user}', [UserController::class, 'adminShow']);
+        Route::put('/users/{user}', [UserController::class, 'adminUpdate']);
+        Route::delete('/users/{user}', [UserController::class, 'adminDestroy']);
         
     });
     

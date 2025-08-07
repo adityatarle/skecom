@@ -33,7 +33,7 @@ class WishlistController extends Controller
             // Get product details
             $product = Product::with(['category', 'images'])->find($productId);
             
-            if (!$product || $product->status !== 'active') {
+            if (!$product) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Product not available'
@@ -83,7 +83,6 @@ class WishlistController extends Controller
             
             $products = Product::with(['category', 'images'])
                 ->whereIn('id', $wishlistIds)
-                ->where('status', 'active')
                 ->get();
 
             return response()->json([
@@ -188,7 +187,7 @@ class WishlistController extends Controller
             // Get product details
             $product = Product::with(['category', 'images'])->find($productId);
             
-            if (!$product || $product->status !== 'active') {
+            if (!$product) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Product not available'
@@ -248,7 +247,7 @@ class WishlistController extends Controller
             $products = $wishlistItems->map(function ($item) {
                 return $item->product;
             })->filter(function ($product) {
-                return $product && $product->status === 'active';
+                return $product;
             });
 
             return response()->json([

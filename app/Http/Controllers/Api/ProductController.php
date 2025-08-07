@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Validator;
 class ProductController extends Controller
 {
     /**
-     * Get all active products with pagination
+     * Get all products with pagination
      */
     public function index(Request $request)
     {
@@ -20,20 +20,23 @@ class ProductController extends Controller
             $perPage = $request->get('per_page', 12);
             $page = $request->get('page', 1);
             
-            $query = Product::with(['category', 'subcategory', 'images'])
-                ->where('status', 'active');
+            $query = Product::with(['category', 'subcategory', 'images']);
             
             // Apply filters
             if ($request->has('category_id')) {
                 $query->where('category_id', $request->category_id);
             }
             
-            if ($request->has('featured')) {
-                $query->where('featured', $request->featured);
+            if ($request->has('is_featured')) {
+                $query->where('is_featured', $request->is_featured);
             }
             
             if ($request->has('on_sale')) {
                 $query->where('on_sale', $request->on_sale);
+            }
+            
+            if ($request->has('is_top_rated')) {
+                $query->where('is_top_rated', $request->is_top_rated);
             }
             
             $products = $query->orderBy('created_at', 'desc')->paginate($perPage);
@@ -70,7 +73,6 @@ class ProductController extends Controller
     {
         try {
             $product = Product::with(['category', 'subcategory', 'images', 'pricingDetails'])
-                ->where('status', 'active')
                 ->find($id);
 
             if (!$product) {
@@ -87,7 +89,6 @@ class ProductController extends Controller
             $relatedProducts = Product::with(['category', 'images'])
                 ->where('category_id', $product->category_id)
                 ->where('id', '!=', $product->id)
-                ->where('status', 'active')
                 ->limit(4)
                 ->get();
 
@@ -133,7 +134,6 @@ class ProductController extends Controller
             $perPage = $request->get('per_page', 12);
             
             $products = Product::with(['category', 'images'])
-                ->where('status', 'active')
                 ->where(function($q) use ($query) {
                     $q->where('name', 'LIKE', "%{$query}%")
                       ->orWhere('description', 'LIKE', "%{$query}%");
@@ -176,8 +176,9 @@ class ProductController extends Controller
                 'sub_category_id' => 'nullable|exists:subcategories,id',
                 'min_price' => 'nullable|numeric|min:0',
                 'max_price' => 'nullable|numeric|min:0',
-                'featured' => 'nullable|boolean',
+                'is_featured' => 'nullable|boolean',
                 'on_sale' => 'nullable|boolean',
+                'is_top_rated' => 'nullable|boolean',
                 'per_page' => 'nullable|integer|min:1|max:50',
             ]);
 
@@ -189,8 +190,7 @@ class ProductController extends Controller
                 ], 422);
             }
 
-            $query = Product::with(['category', 'subcategory', 'images'])
-                ->where('status', 'active');
+            $query = Product::with(['category', 'subcategory', 'images']);
 
             // Apply filters
             if ($request->has('category_id')) {
@@ -209,12 +209,16 @@ class ProductController extends Controller
                 $query->where('price', '<=', $request->max_price);
             }
 
-            if ($request->has('featured')) {
-                $query->where('featured', $request->featured);
+            if ($request->has('is_featured')) {
+                $query->where('is_featured', $request->is_featured);
             }
 
             if ($request->has('on_sale')) {
                 $query->where('on_sale', $request->on_sale);
+            }
+
+            if ($request->has('is_top_rated')) {
+                $query->where('is_top_rated', $request->is_top_rated);
             }
 
             $perPage = $request->get('per_page', 12);
@@ -267,7 +271,7 @@ class ProductController extends Controller
                 ], 422);
             }
 
-            $product = Product::where('status', 'active')->find($productId);
+            $product = Product::find($productId);
             
             if (!$product) {
                 return response()->json([
@@ -309,8 +313,7 @@ class ProductController extends Controller
     {
         try {
             $products = Product::with(['category', 'images'])
-                ->where('status', 'active')
-                ->where('featured', true)
+                ->where('is_featured', true)
                 ->orderBy('created_at', 'desc')
                 ->limit(8)
                 ->get();
@@ -339,7 +342,6 @@ class ProductController extends Controller
     {
         try {
             $products = Product::with(['category', 'images'])
-                ->where('status', 'active')
                 ->where('on_sale', true)
                 ->orderBy('created_at', 'desc')
                 ->paginate(12);

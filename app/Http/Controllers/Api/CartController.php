@@ -35,7 +35,7 @@ class CartController extends Controller
             // Get product details
             $product = Product::with(['category', 'images'])->find($productId);
             
-            if (!$product || $product->status !== 'active') {
+            if (!$product) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Product not available'
@@ -267,7 +267,7 @@ class CartController extends Controller
             // Get product details
             $product = Product::with(['category', 'images'])->find($productId);
             
-            if (!$product || $product->status !== 'active') {
+            if (!$product) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Product not available'

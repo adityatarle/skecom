@@ -1,4 +1,6 @@
-@php use Illuminate\Support\Facades\Route; @endphp
+@php
+    use Illuminate\Support\Facades\Route;
+@endphp
 @extends('layouts.app')
 
 <style>

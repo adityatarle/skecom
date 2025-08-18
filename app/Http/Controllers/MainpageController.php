@@ -26,7 +26,10 @@ class MainpageController extends Controller
 
         // Fetch only active categories that have at least one product
         $categories = ProductCategory::where('is_active', 1)
-            ->whereHas('products')
+            ->where(function ($q) {
+                $q->whereHas('products')
+                  ->orWhereHas('subcategories.products');
+            })
             ->get();
 
         // Organize products by category (for easier display in tabs)
@@ -144,7 +147,10 @@ class MainpageController extends Controller
 
         // Show only active categories that have products in the sidebar
         $categories = ProductCategory::where('is_active', 1)
-            ->whereHas('products')
+            ->where(function ($q) {
+                $q->whereHas('products')
+                  ->orWhereHas('subcategories.products');
+            })
             ->get();
 
         if ($request->ajax()) {

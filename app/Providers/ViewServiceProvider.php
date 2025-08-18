@@ -26,7 +26,10 @@ class ViewServiceProvider extends ServiceProvider
         // This tells Laravel to run this function every time the 'layout.header' view is rendered.
         View::composer('layout.header', function ($view) {
             $categories = ProductCategory::where('is_active', 1)
-                                         ->whereHas('products')
+                                         ->where(function ($q) {
+                                             $q->whereHas('products')
+                                               ->orWhereHas('subcategories.products');
+                                         })
                                          ->with(['subcategories' => function ($query) {
                                              $query->where('is_active', 1);
                                          }])

@@ -24,8 +24,10 @@ class MainpageController extends Controller
         // Fetch all products
         $products = Product::all();
 
-        // Fetch all product categories
-        $categories = ProductCategory::all();
+        // Fetch only active categories that have at least one product
+        $categories = ProductCategory::where('is_active', 1)
+            ->whereHas('products')
+            ->get();
 
         // Organize products by category (for easier display in tabs)
         $productsByCategory = [];
@@ -140,7 +142,10 @@ class MainpageController extends Controller
             })
             ->get();
 
-        $categories = ProductCategory::all();
+        // Show only active categories that have products in the sidebar
+        $categories = ProductCategory::where('is_active', 1)
+            ->whereHas('products')
+            ->get();
 
         if ($request->ajax()) {
             return view('partials.product_grid', ['products' => $products])->render();

@@ -29,6 +29,7 @@
     <div class="card mb-4">
         <div class="card-header">Products by Category</div>
         <div class="card-body">
+            <canvas id="productsCategoryBar" class="mb-3"></canvas>
             <div class="table-responsive">
                 <table class="table table-sm">
                     <thead><tr><th>Category</th><th>Products</th></tr></thead>
@@ -65,5 +66,19 @@
     </div>
 </div>
 
-@include('dashboard.layout.footer')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    (function(){
+        const byCat = @json($byCategory);
+        const ctx = document.getElementById('productsCategoryBar');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: { labels: byCat.map(c => c.name), datasets: [{ label: 'Products', data: byCat.map(c => Number(c.products_count)), backgroundColor:'#6366f1' }] },
+                options: { indexAxis: 'y', scales:{x:{beginAtZero:true}} }
+            });
+        }
+    })();
+</script>
 
+@include('dashboard.layout.footer')

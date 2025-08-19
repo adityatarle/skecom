@@ -26,17 +26,15 @@ class ViewServiceProvider extends ServiceProvider
             // 1. Get all parent categories that are active.
             // 2. For each of those, simply load all of their subcategories.
             $categories = ProductCategory::where('is_active', 1)
-
-                                         ->with('subcategories') // <-- MODIFIED: We removed the extra filter condition
-
+                                         ->with('subcategories')
                                          ->where(function ($q) {
                                              $q->whereHas('products')
                                                ->orWhereHas('subcategories.products');
                                          })
+                                         ->withCount('products')
                                          ->with(['subcategories' => function ($query) {
                                              $query->where('is_active', 1);
                                          }])
-
                                          ->orderBy('name', 'asc')
                                          ->get();
 

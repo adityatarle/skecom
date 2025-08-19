@@ -1,7 +1,10 @@
 @include('dashboard.layout.header')
 
 <div class="container">
-    <h2 style="font-size: 1.8rem; margin-bottom: 20px; color: #343a40; text-align:center;">Reviews</h2>
+    <div class="d-flex justify-content-between align-items-center mt-2 mb-3">
+        <h2 style="font-size: 1.8rem; color: #343a40;">Reviews</h2>
+        <a href="{{ route('admin.reviews.export') }}" class="btn btn-success">Export to CSV</a>
+    </div>
 
    @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>

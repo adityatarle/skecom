@@ -17,6 +17,8 @@ use App\Http\Controllers\RazorpayController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\SettingsController;
 
 // Public Routes
 Route::get('/', [MainpageController::class, 'index'])->name('main.page');
@@ -143,6 +145,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
     // Reviews
     Route::get('/reviews', [ReviewController::class, 'index'])->name('admin.reviews.index');
+    Route::get('/reviews/export', [ReviewController::class, 'export'])->name('admin.reviews.export');
     Route::get('/reviews/{review}/edit', [ReviewController::class, 'edit'])->name('admin.reviews.edit');
     Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('admin.reviews.update');
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('admin.reviews.destroy');
@@ -160,6 +163,20 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         Route::get('/groups', [CustomerController::class, 'groups'])->name('groups');
         Route::get('/export', [CustomerController::class, 'export'])->name('export');
         Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
+    });
+
+    // Analytics
+    Route::prefix('analytics')->name('admin.analytics.')->group(function () {
+        Route::get('/sales', [AnalyticsController::class, 'sales'])->name('sales');
+        Route::get('/products', [AnalyticsController::class, 'products'])->name('products');
+        Route::get('/customers', [AnalyticsController::class, 'customers'])->name('customers');
+    });
+
+    // Settings
+    Route::prefix('settings')->name('admin.settings.')->group(function () {
+        Route::get('/general', [SettingsController::class, 'general'])->name('general');
+        Route::get('/payment', [SettingsController::class, 'payment'])->name('payment');
+        Route::get('/email', [SettingsController::class, 'email'])->name('email');
     });
 });
 

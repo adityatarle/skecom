@@ -30,6 +30,7 @@ class MainpageController extends Controller
                 $q->whereHas('products')
                   ->orWhereHas('subcategories.products');
             })
+            ->withCount('products')
             ->get();
 
         // Organize products by category (for easier display in tabs)
@@ -151,6 +152,7 @@ class MainpageController extends Controller
                 $q->whereHas('products')
                   ->orWhereHas('subcategories.products');
             })
+            ->withCount('products')
             ->get();
 
         if ($request->ajax()) {

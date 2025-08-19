@@ -735,11 +735,11 @@
                                                 </a>
                                             </div>
                                             <div class="menu-item">
-                                                <a class="menu-link" href="#">
+                                                <a class="menu-link" href="{{ route('admin.reviews.export') }}">
                                                     <span class="menu-bullet">
                                                         <span class="bullet bullet-dot"></span>
                                                     </span>
-                                                    <span class="menu-title">Pending Reviews</span>
+                                                    <span class="menu-title">Export Reviews</span>
                                                     <span class="menu-badge">5</span>
                                                 </a>
                                             </div>
@@ -764,7 +764,7 @@
                                         </span>
                                         <div class="menu-sub menu-sub-accordion menu-active-bg">
                                             <div class="menu-item">
-                                                <a class="menu-link" href="#">
+                                                <a class="menu-link" href="{{ route('admin.analytics.sales') }}">
                                                     <span class="menu-bullet">
                                                         <span class="bullet bullet-dot"></span>
                                                     </span>
@@ -772,7 +772,7 @@
                                                 </a>
                                             </div>
                                             <div class="menu-item">
-                                                <a class="menu-link" href="#">
+                                                <a class="menu-link" href="{{ route('admin.analytics.products') }}">
                                                     <span class="menu-bullet">
                                                         <span class="bullet bullet-dot"></span>
                                                     </span>
@@ -780,7 +780,7 @@
                                                 </a>
                                             </div>
                                             <div class="menu-item">
-                                                <a class="menu-link" href="#">
+                                                <a class="menu-link" href="{{ route('admin.analytics.customers') }}">
                                                     <span class="menu-bullet">
                                                         <span class="bullet bullet-dot"></span>
                                                     </span>
@@ -808,7 +808,7 @@
                                         </span>
                                         <div class="menu-sub menu-sub-accordion menu-active-bg">
                                             <div class="menu-item">
-                                                <a class="menu-link" href="#">
+                                                <a class="menu-link" href="{{ route('admin.settings.general') }}">
                                                     <span class="menu-bullet">
                                                         <span class="bullet bullet-dot"></span>
                                                     </span>
@@ -816,7 +816,7 @@
                                                 </a>
                                             </div>
                                             <div class="menu-item">
-                                                <a class="menu-link" href="#">
+                                                <a class="menu-link" href="{{ route('admin.settings.payment') }}">
                                                     <span class="menu-bullet">
                                                         <span class="bullet bullet-dot"></span>
                                                     </span>
@@ -824,7 +824,7 @@
                                                 </a>
                                             </div>
                                             <div class="menu-item">
-                                                <a class="menu-link" href="#">
+                                                <a class="menu-link" href="{{ route('admin.settings.email') }}">
                                                     <span class="menu-bullet">
                                                         <span class="bullet bullet-dot"></span>
                                                     </span>

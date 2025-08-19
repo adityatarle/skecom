@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Review;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ReviewsExport;
 
 class ReviewController extends Controller
 {
@@ -35,4 +37,11 @@ class ReviewController extends Controller
        return redirect()->route('admin.reviews.index')->with('success', 'Review deleted successfully.');
    }
 
+    /**
+     * Export all reviews to CSV for analysis.
+     */
+    public function export()
+    {
+        return Excel::download(new ReviewsExport, 'reviews_'.date('Y-m-d').'.csv');
+    }
 }

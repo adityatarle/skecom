@@ -17,9 +17,9 @@ public function index(Request $request)
         // Start with a simple query first
         $query = ProductCategory::query();
         
-        // Add relationships
-        $query->with(['parent', 'children']);
-        // $query->withCount(['products', 'children']);
+        // Add relationships and counts for efficient rendering
+        $query->with(['parent', 'children'])
+              ->withCount(['products', 'children']);
             
         // Filter by level if specified
         if ($request->filled('level')) {

@@ -12,9 +12,11 @@ use App\Models\ProductCategory;
 
 class AnalyticsController extends Controller
 {
-    public function sales()
+    public function sales(Request $request)
     {
         $today = Carbon::today();
+        $start = $request->filled('start') ? Carbon::parse($request->get('start'))->startOfDay() : Carbon::now()->subDays(30);
+        $end = $request->filled('end') ? Carbon::parse($request->get('end'))->endOfDay() : Carbon::now();
         $startMonth = Carbon::now()->startOfMonth();
         $endMonth = Carbon::now()->endOfMonth();
 
@@ -28,13 +30,13 @@ class AnalyticsController extends Controller
         ];
 
         $dailySales = Order::selectRaw('DATE(created_at) as date, COUNT(*) as orders, SUM(total_price) as revenue')
-            ->whereBetween('created_at', [Carbon::now()->subDays(30), Carbon::now()])
+            ->whereBetween('created_at', [$start, $end])
             ->groupBy('date')
             ->orderBy('date')
             ->get();
 
         // Aggregate top products and categories from JSON cart stored in orders.products
-        $ordersForAggregation = Order::whereBetween('created_at', [Carbon::now()->subMonths(6), Carbon::now()])->get(['products']);
+        $ordersForAggregation = Order::whereBetween('created_at', [$start, $end])->get(['products']);
 
         $productTotals = [];
         $allProductIds = [];
@@ -104,27 +106,32 @@ class AnalyticsController extends Controller
         return view('admin.analytics.sales', compact('totals', 'dailySales', 'topProducts', 'categoryPerformance'));
     }
 
-    public function products()
+    public function products(Request $request)
     {
         $productCounts = Product::selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->pluck('count', 'status');
 
-        $byCategory = ProductCategory::withCount('products')
-            ->orderByDesc('products_count')
-            ->get(['id','name']);
+        $byCategoryQuery = ProductCategory::withCount('products')->orderByDesc('products_count');
+        $byCategory = $byCategoryQuery->get(['id','name']);
 
-        $topViewed = Product::orderByDesc('id') // placeholder for views if not tracked
-            ->limit(10)
-            ->get(['id','name','price']);
+        $topViewedQuery = Product::query();
+        if ($request->filled('category')) {
+            $topViewedQuery->where('category_id', $request->integer('category'));
+        }
+        $topViewed = $topViewedQuery->orderByDesc('id')->limit(10)->get(['id','name','price']);
 
         return view('admin.analytics.products', compact('productCounts', 'byCategory', 'topViewed'));
     }
 
-    public function customers()
+    public function customers(Request $request)
     {
+        $start = $request->filled('start') ? Carbon::parse($request->get('start'))->startOfDay() : Carbon::now()->subDays(30);
+        $end = $request->filled('end') ? Carbon::parse($request->get('end'))->endOfDay() : Carbon::now();
+
         $customersWithOrders = DB::table('orders')
             ->selectRaw('email, COUNT(*) as orders, SUM(total_price) as spent, MAX(created_at) as last_order')
+            ->whereBetween('created_at', [$start, $end])
             ->groupBy('email')
             ->orderByDesc('spent')
             ->limit(20)
@@ -132,7 +139,7 @@ class AnalyticsController extends Controller
 
         $signupsLast30 = DB::table('users')
             ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
-            ->whereBetween('created_at', [Carbon::now()->subDays(30), Carbon::now()])
+            ->whereBetween('created_at', [$start, $end])
             ->groupBy('date')
             ->orderBy('date')
             ->get();

@@ -1,7 +1,15 @@
 @include('dashboard.layout.header')
 
 <div class="container mt-4">
-    <h1>Customer Analytics</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">Customer Analytics</h1>
+        <form method="GET" class="d-flex gap-2">
+            <input type="date" name="start" value="{{ request('start') }}" class="form-control form-control-sm">
+            <input type="date" name="end" value="{{ request('end') }}" class="form-control form-control-sm">
+            <button class="btn btn-sm btn-primary">Apply</button>
+            <a href="{{ url()->current() }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+        </form>
+    </div>
 
     <div class="card mb-4">
         <div class="card-header">Top Customers (by Spend)</div>

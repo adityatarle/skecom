@@ -1,3 +1,4 @@
+
 @include('dashboard.layout.header')
 
 <style>
@@ -211,7 +212,7 @@
                                                         </small>
                                                     @endif
                                                     @if($category->description)
-                                                        <p class="mb-0 small text-muted">{{ Str::limit($category->description, 50) }}</p>
+                                                        <p class="mb-0 small text-muted">{{ $category->short_description }}</p>
                                                     @endif
                                                 </div>
                                             </div>

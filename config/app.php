@@ -187,6 +187,8 @@ return [
 
     'aliases' => [
         // ... (the rest of the file is standard, you don't need to change it)
+        'Auth' => Illuminate\Support\Facades\Auth::class,
+        'Str' => Illuminate\Support\Str::class,
     ],
 
 ];

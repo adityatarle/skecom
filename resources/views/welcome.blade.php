@@ -1,5 +1,10 @@
 @include('layout.header')
 
+
+@php
+    use Illuminate\Support\Str;
+@endphp
+
 <style>
     @keyframes moveRight {
         0% {

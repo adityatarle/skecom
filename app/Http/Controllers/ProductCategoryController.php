@@ -9,70 +9,79 @@ use Illuminate\Validation\Rule;
 
 class ProductCategoryController extends Controller
 {
-    public function index(Request $request)
-    {
-        try {
-            // Start with a simple query first
-            $query = ProductCategory::query();
+    
+
+public function index(Request $request)
+{
+    try {
+        // Start with a simple query first
+        $query = ProductCategory::query();
+        
+        // Add relationships
+        $query->with(['parent', 'children']);
+        // $query->withCount(['products', 'children']);
             
-            // Add relationships
-            $query->with(['parent', 'children']);
-            // Temporarily remove withCount to test if it's causing the issue
-            // $query->withCount(['products', 'children']);
-                
-            // Filter by level if specified
-            if ($request->has('level') && $request->level !== '') {
-                $query->where('level', $request->level);
-            }
-            
-            // Filter by parent if specified
-            if ($request->has('parent_id') && $request->parent_id !== '') {
-                $query->where('parent_id', $request->parent_id);
-            }
-            
-            // Search functionality
-            if ($request->has('search') && $request->search !== '') {
-                $searchTerm = $request->search;
-                $query->where(function($q) use ($searchTerm) {
-                    $q->where('name', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('description', 'like', '%' . $searchTerm . '%');
-                });
-            }
-            
-            // Add ordering
-            $query->orderBy('level')->orderBy('sort_order')->orderBy('name');
-            
-            // Paginate
-            $categories = $query->paginate(15);
-            
-            // Get parent categories for filter dropdown
-            $parentCategories = ProductCategory::whereIn('level', [1, 2])->orderBy('name')->get();
-            
-            // Ensure categories is a paginator instance
-            if (!$categories instanceof \Illuminate\Pagination\LengthAwarePaginator) {
-                \Log::error('Categories is not a paginator instance', [
-                    'type' => get_class($categories),
-                    'categories' => $categories
-                ]);
-                // Fallback to a simple collection if pagination fails
-                $categories = $query->get();
-            }
-            
-            return view('admin.category.index', compact('categories', 'parentCategories'));
-            
-        } catch (\Exception $e) {
-            \Log::error('Error in ProductCategoryController@index: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            // Return empty results on error
-            $categories = collect();
-            $parentCategories = collect();
-            
-            return view('admin.category.index', compact('categories', 'parentCategories'))
-                ->with('error', 'An error occurred while loading categories. Please try again.');
+        // Filter by level if specified
+        if ($request->filled('level')) {
+            $query->where('level', $request->level);
         }
+        
+        // Filter by parent if specified
+        if ($request->filled('parent_id')) {
+            $query->where('parent_id', $request->parent_id);
+        }
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('description', 'like', '%' . $searchTerm . '%');
+            });
+        }
+        
+        // Add ordering
+        $query->orderBy('level')->orderBy('sort_order')->orderBy('name');
+        
+        // Paginate
+        $categories = $query->paginate(15);
+
+        // Transform categories to add short fields
+        $categories->getCollection()->transform(function ($category) {
+            $category->short_name = Str::limit($category->name, 20); // 20 chars max
+            $category->short_description = Str::limit($category->description, 50); // 50 chars max
+            return $category;
+        });
+        
+        // Get parent categories for filter dropdown
+        $parentCategories = ProductCategory::whereIn('level', [1, 2])
+                                ->orderBy('name')
+                                ->get();
+        
+        // Ensure categories is a paginator instance
+        if (!$categories instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            \Log::error('Categories is not a paginator instance', [
+                'type' => get_class($categories),
+                'categories' => $categories
+            ]);
+            $categories = $query->get();
+        }
+        
+        return view('admin.category.index', compact('categories', 'parentCategories'));
+        
+    } catch (\Exception $e) {
+        \Log::error('Error in ProductCategoryController@index: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        $categories = collect();
+        $parentCategories = collect();
+        
+        return view('admin.category.index', compact('categories', 'parentCategories'))
+            ->with('error', 'An error occurred while loading categories. Please try again.');
     }
+}
+
 
     public function create(Request $request)
     {
@@ -92,7 +101,8 @@ class ProductCategoryController extends Controller
                 ->get();
         }
         
-        return view('admin.category.create', compact('level', 'parentCategories'));
+        return view('admin.category.create', compact('level', 'parentCategories'))
+        ->with('Str', Str::class);
     }
 
     public function store(Request $request)

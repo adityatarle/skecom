@@ -53,6 +53,20 @@
         border-color: #667eea;
         color: #ffffff;
     }
+
+    /* Dark-mode friendly styling for inactive rows */
+    .table-secondary {
+        background-color: rgba(255, 255, 255, 0.04) !important;
+        color: #a1a5b7 !important;
+    }
+    .table-secondary .badge {
+        opacity: 0.85;
+    }
+    .table-secondary a.btn,
+    .table-secondary .form-check-input {
+        filter: grayscale(0.3);
+        opacity: 0.9;
+    }
 </style>
 
 <div class="container-fluid py-4">

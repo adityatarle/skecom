@@ -33,22 +33,73 @@ class AnalyticsController extends Controller
             ->orderBy('date')
             ->get();
 
-        $topProducts = DB::table('order_items')
-            ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->selectRaw('products.name, SUM(order_items.quantity) as qty, SUM(order_items.quantity * order_items.price) as revenue')
-            ->groupBy('products.id', 'products.name')
-            ->orderByDesc('qty')
-            ->limit(10)
-            ->get();
+        // Aggregate top products and categories from JSON cart stored in orders.products
+        $ordersForAggregation = Order::whereBetween('created_at', [Carbon::now()->subMonths(6), Carbon::now()])->get(['products']);
 
-        $categoryPerformance = DB::table('order_items')
-            ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->join('product_categories', 'products.category_id', '=', 'product_categories.id')
-            ->selectRaw('product_categories.name as category, SUM(order_items.quantity) as qty, SUM(order_items.quantity * order_items.price) as revenue')
-            ->groupBy('product_categories.id', 'product_categories.name')
-            ->orderByDesc('revenue')
-            ->limit(10)
-            ->get();
+        $productTotals = [];
+        $allProductIds = [];
+        foreach ($ordersForAggregation as $order) {
+            if (!is_array($order->products)) {
+                continue;
+            }
+            foreach ($order->products as $productId => $data) {
+                $quantity = (int)($data['quantity'] ?? 0);
+                $price = (float)($data['price'] ?? 0);
+                if ($quantity <= 0) continue;
+                if (!isset($productTotals[$productId])) {
+                    $productTotals[$productId] = ['qty' => 0, 'revenue' => 0.0];
+                }
+                $productTotals[$productId]['qty'] += $quantity;
+                $productTotals[$productId]['revenue'] += $quantity * $price;
+                $allProductIds[] = (int)$productId;
+            }
+        }
+
+        $allProductIds = array_values(array_unique($allProductIds));
+        $productMeta = Product::whereIn('id', $allProductIds)->get(['id','name','category_id'])->keyBy('id');
+
+        // Build top products list
+        $topProducts = collect($productTotals)
+            ->map(function ($stats, $productId) use ($productMeta) {
+                $meta = $productMeta->get((int)$productId);
+                return (object) [
+                    'id' => (int)$productId,
+                    'name' => $meta?->name ?? ('Product #'.$productId),
+                    'qty' => $stats['qty'],
+                    'revenue' => $stats['revenue'],
+                    'category_id' => $meta?->category_id,
+                ];
+            })
+            ->sortByDesc('qty')
+            ->take(10)
+            ->values();
+
+        // Category performance
+        $categoryAgg = [];
+        if ($productMeta->isNotEmpty()) {
+            foreach ($productTotals as $productId => $stats) {
+                $categoryId = optional($productMeta->get((int)$productId))->category_id;
+                if (!$categoryId) continue;
+                if (!isset($categoryAgg[$categoryId])) {
+                    $categoryAgg[$categoryId] = ['qty' => 0, 'revenue' => 0.0];
+                }
+                $categoryAgg[$categoryId]['qty'] += $stats['qty'];
+                $categoryAgg[$categoryId]['revenue'] += $stats['revenue'];
+            }
+        }
+
+        $categoryNames = ProductCategory::whereIn('id', array_keys($categoryAgg))->pluck('name','id');
+        $categoryPerformance = collect($categoryAgg)
+            ->map(function ($stats, $categoryId) use ($categoryNames) {
+                return (object) [
+                    'category' => $categoryNames[$categoryId] ?? ('Category #'.$categoryId),
+                    'qty' => $stats['qty'],
+                    'revenue' => $stats['revenue'],
+                ];
+            })
+            ->sortByDesc('revenue')
+            ->take(10)
+            ->values();
 
         return view('admin.analytics.sales', compact('totals', 'dailySales', 'topProducts', 'categoryPerformance'));
     }
